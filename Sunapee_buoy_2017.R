@@ -120,10 +120,12 @@ buoy2017_L1 <- buoy2017 %>%
   right_join(., alltimes_2017) %>% 
   arrange(datetime)
 
+buoy2017_L1 <- buoy2017_L1[!duplicated(buoy2017_L1$datetime),]
+
 
 ####THERMISTERS####
 buoy2017_therm_vert <- buoy2017_L1 %>% 
-  select(datetime, alltemp2016) %>%
+  select(datetime, alltemp2011) %>%
   gather(variable, value, -datetime)
 
 # ggplot(buoy2017_therm_vert, aes(x=datetime, y=value)) +
@@ -133,28 +135,29 @@ buoy2017_therm_vert <- buoy2017_L1 %>%
 #   final_theme
 
 buoy2017_L1 <- buoy2017_L1 %>% 
-  mutate_at(vars(alltemp2016),
+  mutate_at(vars(alltemp2011),
             funs(case_when(. == 1215 ~ NA_real_,
                            . == 555.4 ~ NA_real_,
                            . == -6999 ~ NA_real_,
                            TRUE ~ .)))
 
 buoy2017_therm_vert <- buoy2017_L1 %>% 
-  select(datetime, alltemp2016) %>%
+  select(datetime, alltemp2011) %>%
   gather(variable, value, -datetime)
 
-ggplot(buoy2017_therm_vert,
-       aes(x=datetime, y=value, color=variable)) +
-  geom_point() +
-  scale_x_datetime(date_minor_breaks = '1 month') +
-  scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
-                              "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
-  final_theme 
+# ggplot(buoy2017_therm_vert,
+#        aes(x=datetime, y=value, color=variable)) +
+#   geom_point() +
+#   scale_x_datetime(date_minor_breaks = '1 month') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
+#                               "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
+#   final_theme 
 
 buoy2017_L1 <- buoy2017_L1 %>% 
   mutate(TempC_0m = NA_real_)
+
 buoy2017_therm_vert <- buoy2017_L1 %>% 
-  select(datetime, alltemp2016) %>%
+  select(datetime, alltemp2011) %>%
   gather(variable, value, -datetime)
 
 # ggplot(subset(buoy2017_therm_vert,
@@ -176,11 +179,11 @@ buoy2017_therm_vert <- buoy2017_L1 %>%
 #   final_theme 
 
 buoy2017_L1 <- buoy2017_L1 %>% 
-  mutate_at(vars(alltemp2016),
+  mutate_at(vars(alltemp2011),
             funs(case_when(datetime < as.POSIXct('2017-05-17 11:10', tz='UTC') ~ NA_real_,
                            TRUE ~ .)))
 buoy2017_therm_vert_L1 <- buoy2017_L1 %>% 
-  select(datetime, alltemp2016) %>%
+  select(datetime, alltemp2011) %>%
   gather(variable, value, -datetime)
 
 # ggplot(subset(buoy2017_therm_vert_L1,
@@ -215,7 +218,7 @@ buoy2017_L1 <- buoy2017_L1 %>%
             funs(case_when(datetime >= as.POSIXct('2017-06-14', tz='UTC') & datetime < as.POSIXct('2017-07-07', tz='UTC') ~ NA_real_,
                            TRUE ~ .)))
 buoy2017_therm_vert_L1 <- buoy2017_L1 %>% 
-  select(datetime, alltemp2016) %>%
+  select(datetime, alltemp2011) %>%
   gather(variable, value, -datetime)
 
 # ggplot(subset(buoy2017_therm_vert_L1,
@@ -256,11 +259,11 @@ buoy2017_therm_vert_L1 <- buoy2017_L1 %>%
 #   final_theme 
 
 buoy2017_L1 <- buoy2017_L1 %>% 
-  mutate_at(vars(alltemp2016),
+  mutate_at(vars(alltemp2011),
             funs(case_when(datetime == as.POSIXct('2017-08-16 11:40', tz='UTC') ~ NA_real_,
                            TRUE ~ .)))
 buoy2017_therm_vert_L1 <- buoy2017_L1 %>% 
-  select(datetime, alltemp2016) %>%
+  select(datetime, alltemp2011) %>%
   gather(variable, value, -datetime)
 
 # ggplot(subset(buoy2017_therm_vert_L1,
@@ -301,21 +304,21 @@ buoy2017_therm_vert_L1 <- buoy2017_L1 %>%
 #   final_theme 
 
 buoy2017_L1 <- buoy2017_L1 %>% 
-  mutate_at(vars(alltemp2016),
+  mutate_at(vars(alltemp2011),
             funs(case_when(datetime >= as.POSIXct('2017-10-19 10:00', tz='UTC') ~ NA_real_,
                            TRUE ~ .)))
 buoy2017_therm_vert_L1 <- buoy2017_L1 %>% 
-  select(datetime, alltemp2016) %>%
+  select(datetime, alltemp2011) %>%
   gather(variable, value, -datetime)
 
 
-ggplot(buoy2017_therm_vert_L1,
-       aes(x=datetime, y=value, color=variable)) +
-  geom_point() +
-  scale_x_datetime(date_minor_breaks = '1 month') +
-  scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
-                              "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
-  final_theme 
+# ggplot(buoy2017_therm_vert_L1,
+#        aes(x=datetime, y=value, color=variable)) +
+#   geom_point() +
+#   scale_x_datetime(date_minor_breaks = '1 month') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
+#                               "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
+#   final_theme 
 
 rm(buoy2017_therm_vert, buoy2017_therm_vert_L1)
 
@@ -600,8 +603,21 @@ buoy2017_do_vert_L1 <- buoy2017_L1 %>%
   select(datetime, location, lowDO, upDO) %>%
   gather(variable, value, -datetime, -location)
 
-ggplot(buoy2017_do_vert_L1,
-       aes(x=datetime, y=value, color=location)) +
+# ggplot(buoy2017_do_vert_L1,
+#        aes(x=datetime, y=value, color=location)) +
+#   geom_point() +
+#   facet_grid(variable ~ ., scales = 'free_y') +
+#   scale_x_datetime(date_minor_breaks = '1 month') +
+#   labs(title = 'do 2017, clean') +
+#   final_theme +
+#   scale_color_colorblind()
+
+buoy2017_updo_vert_L1 <- buoy2017_L1 %>%
+  select(datetime, location, upDO, upper_do_flag) %>%
+  gather(variable, value, -datetime, -location, -upper_do_flag)
+
+ggplot(buoy2017_updo_vert_L1,
+       aes(x=datetime, y=value, color=location, shape = upper_do_flag)) +
   geom_point() +
   facet_grid(variable ~ ., scales = 'free_y') +
   scale_x_datetime(date_minor_breaks = '1 month') +
@@ -609,7 +625,20 @@ ggplot(buoy2017_do_vert_L1,
   final_theme +
   scale_color_colorblind()
 
-rm(buoy2017_do_vert, buoy2017_do_vert_L1)
+buoy2017_lowdo_vert_L1 <- buoy2017_L1 %>%
+  select(datetime, location, upDO, lower_do_flag) %>%
+  gather(variable, value, -datetime, -location, -lower_do_flag)
+
+ggplot(buoy2017_lowdo_vert_L1,
+       aes(x=datetime, y=value, color=location, shape = lower_do_flag)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 month') +
+  labs(title = 'do 2017, clean') +
+  final_theme +
+  scale_color_colorblind()
+
+rm(buoy2017_do_vert, buoy2017_do_vert_L1, buoy2017_updo_vert_L1, buoy2017_lowdo_vert_L1)
 
 ####CHLA####
 # buoy2017_chla_vert <- buoy2017_L1 %>% 
@@ -1554,36 +1583,99 @@ buoy2017_L1 <- buoy2017_L1 %>%
 
 
 #### EXPORT L1 DATA STREAMS ####
-# #export L1 tempstring file
+buoy2017_L1 <-  buoy2017_L1 %>% 
+  mutate_at(vars(upper_do_flag, lower_do_flag, chla_flag, cond_flag, PAR_flag),
+            funs(case_when(location == 'offline' ~ '',
+                           TRUE ~ .)))
+
+#export L1 tempstring file
 # buoy2017_L1 %>%
 #   select(datetime, TempC_0m, TempC_1m, TempC_2m, TempC_3m, TempC_4m, TempC_5m, TempC_6m, TempC_7m, TempC_8m, TempC_9m, location) %>%
+#   rename(TempC_9p85m = 'TempC_9m',
+#          TempC_8p85m = 'TempC_8m',
+#          TempC_7p85m = 'TempC_7m',
+#          TempC_6p85m = 'TempC_6m',
+#          TempC_5p85m = 'TempC_5m',
+#          TempC_4p85m = 'TempC_4m',
+#          TempC_3p85m = 'TempC_3m',
+#          TempC_2p85m = 'TempC_2m',
+#          TempC_1p85m = 'TempC_1m',
+#          TempC_0p85m = 'TempC_0m') %>%
 #   mutate(datetime = as.character(datetime)) %>%
-#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2017_tempstring_L1.csv')
-# 
-# #export l1 do file
-# buoy2017_L1 %>%
-#   select(datetime, upDO, lowDO, upper_do_flag, lower_do_flag, location) %>%
+#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2017_tempstring_L1_corrdepth.csv')
+
+#crete vertical dataset
+buoy_2017_L1_vert <- buoy2017_L1 %>%
+  select(datetime, location, TempC_0m, TempC_1m, TempC_2m, TempC_3m, TempC_4m, TempC_5m, TempC_6m, TempC_7m, TempC_8m, TempC_9m) %>%
+  rename(TempC_9p85m = 'TempC_9m',
+          TempC_8p85m = 'TempC_8m',
+          TempC_7p85m = 'TempC_7m',
+          TempC_6p85m = 'TempC_6m',
+          TempC_5p85m = 'TempC_5m',
+          TempC_4p85m = 'TempC_4m',
+          TempC_3p85m = 'TempC_3m',
+          TempC_2p85m = 'TempC_2m',
+          TempC_1p85m = 'TempC_1m',
+          TempC_0p85m = 'TempC_0m') %>%
+  gather(depth_m, temp_degC, -datetime, -location) %>% 
+  mutate(depth_m = case_when(grepl(pattern = '_0p85m', x = depth_m) ~ '0.85',
+                             grepl(pattern = '_1p85m', x = depth_m) ~ '1.85',
+                             grepl(pattern = '_2p85m', x = depth_m) ~ '2.85',
+                             grepl(pattern = '_3p85m', x = depth_m) ~ '3.85',
+                             grepl(pattern = '_4p85m', x = depth_m) ~ '4.85',
+                             grepl(pattern = '_5p85m', x = depth_m) ~ '5.85',
+                             grepl(pattern = '_6p85m', x = depth_m) ~ '6.85',
+                             grepl(pattern = '_7p85m', x = depth_m) ~ '7.85',
+                             grepl(pattern = '_8p85m', x = depth_m) ~ '8.85',
+                             grepl(pattern = '_9p85m', x = depth_m) ~ '9.85',
+                             TRUE ~ NA_character_)) %>% 
+  mutate(depth_m = as.numeric(depth_m))
+
+
+# no flags to parse
+
+
+#plot to check
+ggplot(buoy_2017_L1_vert, aes(x = datetime, y = temp_degC, color = as.factor(depth_m))) +
+  geom_point() +
+  scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+                              "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+
+
+
+
+#order by date, depth
+buoy_2017_L1_vert <- buoy_2017_L1_vert %>% 
+  arrange(datetime, depth_m)
+
+# buoy_2017_L1_vert %>%
 #   mutate(datetime = as.character(datetime)) %>%
-#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2017_do_L1.csv')
-# 
-# #export l1 par file
-# buoy2017_L1 %>%
-#   select(datetime, PAR, location, PAR_flag) %>%
-#   mutate(datetime = as.character(datetime)) %>%
-#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2017_PAR_L1.csv')
-# 
-# #export l1 wind
-# buoy2017_L1 %>%
-#   select(datetime, AveWindSp, AveWindDir, MaxWindSp, MaxWindDir, location) %>%
-#   mutate(datetime = as.character(datetime)) %>%
-#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2017_wind_L1.csv')
-# 
-# #export l1 air temp file
-# buoy2017_L1 %>%
-#   select(datetime, AirTempC, location) %>%
-#   mutate(datetime = as.character(datetime)) %>%
-#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2017_airtemp_L1.csv')
-# 
+#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2017_tempstring_vert_L1.csv')
+
+#export l1 do file
+buoy2017_L1 %>%
+  select(datetime, upDO, lowDO, upper_do_flag, lower_do_flag, location) %>%
+  mutate(datetime = as.character(datetime)) %>%
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2017_do_L1.csv')
+
+#export l1 par file
+buoy2017_L1 %>%
+  select(datetime, PAR, location, PAR_flag) %>%
+  mutate(datetime = as.character(datetime)) %>%
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2017_PAR_L1.csv')
+
+#export l1 wind
+buoy2017_L1 %>%
+  select(datetime, AveWindSp, AveWindDir, MaxWindSp, MaxWindDir, location) %>%
+  mutate(datetime = as.character(datetime)) %>%
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2017_wind_L1.csv')
+
+#export l1 air temp file
+buoy2017_L1 %>%
+  select(datetime, AirTempC, location) %>%
+  mutate(datetime = as.character(datetime)) %>%
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2017_airtemp_L1.csv')
+
 # #export l1 chla cond file
 # buoy2017_L1 %>%
 #   select(datetime, Chlor_UGL, SpecCond, location, cond_flag, chla_flag) %>% #leave out rfu - it is not rfu - more likely temp.
@@ -1591,5 +1683,7 @@ buoy2017_L1 <- buoy2017_L1 %>%
 #   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2017_chla_cond_L1.csv')
 
 
+
+rm(alltimes_2007, alltimes_2008, alltimes_2009, alltimes_2010, alltimes_2011, alltimes_2012, alltimes_2013, alltimes_2014, alltimes_2015, alltimes_2016, alltimes_2017)
 
 

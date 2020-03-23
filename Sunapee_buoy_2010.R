@@ -25,40 +25,40 @@ buoy2010_L0 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy d
 #   geom_point() +
 #   geom_abline(intercept = 0, slope=1)
 
-#bring in 2010 LMP data for comparison
-LMP2010 <- read_xlsx('C:/Users/steeleb/Dropbox/Lake Sunapee/long term Sunapee data/raw data/LMP files/LMP 2017/DO.xlsx', 
-                     sheet='DO',
-                     col_types = c('text', 'text', 'numeric', 'guess', 'numeric', 
-                                   'numeric', 'numeric', 'numeric', 'numeric' ,'numeric',
-                                   'text', 'text', 'numeric', 'text')) %>% 
-  mutate(DATE = as.Date(DATE, format='%Y-%m-%d')) %>%  #format date
-  filter(DATE >= '2010-01-01' & DATE < '2011-01-01', #filter for 2010 only
-         STATION == 210)
-
-LMP2010_temp <- LMP2010 %>% 
-  select(DATE, DEPTH, TEMP) %>% 
-  filter(DEPTH<=14) %>% 
-  rename(variable = 'DEPTH', 
-         value = 'TEMP',
-         datetime = 'DATE') %>% 
-  mutate(source = 'LMP',
-         datetime = as.POSIXct(paste(datetime, '12:00', sep=' '), format = '%Y-%m-%d %H:%M', tz='UTC'),
-         variable = as.factor(variable),
-         variable = case_when(variable == '0.5' ~ 'TempC_0p5m',
-                              variable == '1' ~ 'TempC_1m',
-                              variable == '2' ~ 'TempC_2m',
-                              variable == '3' ~ 'TempC_3m',
-                              variable == '4' ~ 'TempC_4m',
-                              variable == '5' ~ 'TempC_5m',
-                              variable == '6' ~ 'TempC_6m',
-                              variable == '7' ~ 'TempC_7m',
-                              variable == '8' ~ 'TempC_8m',
-                              variable == '9' ~ 'TempC_9m',
-                              variable == '10' ~ 'TempC_10m',
-                              variable == '11' ~ 'TempC_11m',
-                              variable == '12' ~ 'TempC_12m',
-                              variable == '13' ~ 'TempC_13m',
-                              variable == '14' ~ 'TempC_14m'))
+# #bring in 2010 LMP data for comparison
+# LMP2010 <- read_xlsx('C:/Users/steeleb/Dropbox/Lake Sunapee/long term Sunapee data/raw data/LMP files/LMP 2017/DO.xlsx', 
+#                      sheet='DO',
+#                      col_types = c('text', 'text', 'numeric', 'guess', 'numeric', 
+#                                    'numeric', 'numeric', 'numeric', 'numeric' ,'numeric',
+#                                    'text', 'text', 'numeric', 'text')) %>% 
+#   mutate(DATE = as.Date(DATE, format='%Y-%m-%d')) %>%  #format date
+#   filter(DATE >= '2010-01-01' & DATE < '2011-01-01', #filter for 2010 only
+#          STATION == 210)
+# 
+# LMP2010_temp <- LMP2010 %>% 
+#   select(DATE, DEPTH, TEMP) %>% 
+#   filter(DEPTH<=14) %>% 
+#   rename(variable = 'DEPTH', 
+#          value = 'TEMP',
+#          datetime = 'DATE') %>% 
+#   mutate(source = 'LMP',
+#          datetime = as.POSIXct(paste(datetime, '12:00', sep=' '), format = '%Y-%m-%d %H:%M', tz='UTC'),
+#          variable = as.factor(variable),
+#          variable = case_when(variable == '0.5' ~ 'TempC_0p5m',
+#                               variable == '1' ~ 'TempC_1m',
+#                               variable == '2' ~ 'TempC_2m',
+#                               variable == '3' ~ 'TempC_3m',
+#                               variable == '4' ~ 'TempC_4m',
+#                               variable == '5' ~ 'TempC_5m',
+#                               variable == '6' ~ 'TempC_6m',
+#                               variable == '7' ~ 'TempC_7m',
+#                               variable == '8' ~ 'TempC_8m',
+#                               variable == '9' ~ 'TempC_9m',
+#                               variable == '10' ~ 'TempC_10m',
+#                               variable == '11' ~ 'TempC_11m',
+#                               variable == '12' ~ 'TempC_12m',
+#                               variable == '13' ~ 'TempC_13m',
+#                               variable == '14' ~ 'TempC_14m'))
 
 #create dummy timestamp so there are no blanks
 alltimes_2010 <- as.data.frame(seq.POSIXt(as.POSIXct('2010-01-01 00:00', tz='UTC'), as.POSIXct('2010-12-31 23:50', tz='UTC'), '10 min')) %>% 
@@ -100,19 +100,19 @@ buoy2010_temp_vert <- buoy2010_L1 %>%
   gather(variable, value, -location, -datetime) %>%
   mutate(variable = factor(variable, levels=alltemp2007))
 
-ggplot(subset(buoy2010_temp_vert,
-              subset=(datetime >=as.POSIXct('2010-01-01', tz='UTC') &
-                        datetime < as.POSIXct('2011-01-01', tz='UTC'))),
-       aes(x=datetime, y=value, color=as.factor(variable))) +
-  geom_point() +
-  final_theme +
-  labs(title='2010 buoy temp data, NAs recoded',
-       x=NULL,
-       y='temp (deg C)') +
-  scale_x_datetime(date_minor_breaks = '1 month') +
-  scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-                              "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-01-01', tz='UTC') &
+#                         datetime < as.POSIXct('2011-01-01', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='2010 buoy temp data, NAs recoded',
+#        x=NULL,
+#        y='temp (deg C)') +
+#   scale_x_datetime(date_minor_breaks = '1 month') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
 # ggplot(subset(buoy2010_temp_vert,
 #               subset=(datetime >=as.POSIXct('2010-01-01', tz='UTC') &
 #                         datetime < as.POSIXct('2010-02-01', tz='UTC'))),
@@ -766,7 +766,7 @@ buoy2010_temp_vert_b <- buoy2010_L1 %>%
 
 #adding flags to data until thermisters replaced in Apr 2010
 buoy2010_L1 <- buoy2010_L1 %>% 
-  mutate(temp_flag = case_when(datetime<as.POSIXct('2010-04-03', tz='UTC') ~ 'q',
+  mutate(temp_flag = case_when(datetime<as.POSIXct('2010-04-03', tz='UTC') ~ 's',
                                TRUE ~ ''))
 
 # ggplot(subset(buoy2010_temp_vert_b,
@@ -817,8 +817,7 @@ buoy2010_temp_vert_b <- buoy2010_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 day') +
 #   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
 #                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-
-
+# 
 # ggplot(subset(buoy2010_temp_vert_b,
 #               subset=(datetime >=as.POSIXct('2010-05-01', tz='UTC') &
 #                         datetime < as.POSIXct('2010-06-01', tz='UTC'))),
@@ -831,12 +830,44 @@ buoy2010_temp_vert_b <- buoy2010_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 day') +
 #   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
 #                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
+# #blip in 10-13m thermistors
+# ggplot(subset(buoy2010_temp_vert_b,
+#               subset=(datetime >=as.POSIXct('2010-05-29', tz='UTC') &
+#                         datetime < as.POSIXct('2010-05-30', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='May 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
 
-#addflag to 0p5 after thermistors come back online
 buoy2010_L1 <- buoy2010_L1 %>% 
-  mutate(temp_flag = case_when(datetime>=as.POSIXct('2010-05-20 11:20', tz='UTC') ~ 'q0.5m',
-                               TRUE ~ temp_flag))
+  mutate_at(vars(TempC_10m, TempC_11m, TempC_13m),
+            funs(case_when(datetime == as.POSIXct('2010-05-29 17:30', tz='UTC') ~ NA_real_,
+                           TRUE ~ .))) 
 
+buoy2010_temp_vert_b <- buoy2010_L1 %>%
+  select(datetime, location, alltemp2007) %>%
+  gather(variable, value, -location, -datetime) %>%
+  mutate(variable = factor(variable, levels=alltemp2007))
+
+# ggplot(subset(buoy2010_temp_vert_b,
+#               subset=(datetime >=as.POSIXct('2010-05-29', tz='UTC') &
+#                         datetime < as.POSIXct('2010-05-30', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='May 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
 # ggplot(subset(buoy2010_temp_vert,
 #               subset=(datetime >=as.POSIXct('2010-06-01', tz='UTC') &
 #                         datetime < as.POSIXct('2010-07-01', tz='UTC'))),
@@ -849,7 +880,83 @@ buoy2010_L1 <- buoy2010_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 day') +
 #   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
 #                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# temp blips Jun  3, 12, 17
 # 
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-06-03', tz='UTC') &
+#                         datetime < as.POSIXct('2010-06-04', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Jun 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-06-12', tz='UTC') &
+#                         datetime < as.POSIXct('2010-06-13', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Jun 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-06-17', tz='UTC') &
+#                         datetime < as.POSIXct('2010-06-18', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Jun 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-06-22', tz='UTC') &
+#                         datetime < as.POSIXct('2010-06-23', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Jun 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+
+buoy2010_L1 <- buoy2010_L1 %>% 
+  mutate_at(vars(TempC_10m, TempC_11m, TempC_13m),
+            funs(case_when(datetime == as.POSIXct('2010-06-03 13:50', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-06-12 16:00', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-06-17 3:50', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-06-23 7:00', tz='UTC') ~ NA_real_,
+                           TRUE ~ .))) 
+
+buoy2010_temp_vert_b <- buoy2010_L1 %>%
+  select(datetime, location, alltemp2007) %>%
+  gather(variable, value, -location, -datetime) %>%
+  mutate(variable = factor(variable, levels=alltemp2007))
+
+# ggplot(subset(buoy2010_temp_vert_b,
+#               subset=(datetime >=as.POSIXct('2010-06-01', tz='UTC') &
+#                         datetime < as.POSIXct('2010-07-01', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Jun 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 day') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+
 # ggplot(subset(buoy2010_temp_vert,
 #               subset=(datetime >=as.POSIXct('2010-07-01', tz='UTC') &
 #                         datetime < as.POSIXct('2010-08-01', tz='UTC'))),
@@ -863,6 +970,19 @@ buoy2010_L1 <- buoy2010_L1 %>%
 #   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
 #                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
 # 
+# #Jul 2
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-07-02', tz='UTC') &
+#                         datetime < as.POSIXct('2010-07-03', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Jul 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
 # #Jul 9
 # ggplot(subset(buoy2010_temp_vert,
 #               subset=(datetime >=as.POSIXct('2010-07-09', tz='UTC') &
@@ -876,11 +996,72 @@ buoy2010_L1 <- buoy2010_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 hour') +
 #   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
 #                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# #jul 10 
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-07-10', tz='UTC') &
+#                         datetime < as.POSIXct('2010-07-11', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Jul 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
+# #jul 14
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-07-14', tz='UTC') &
+#                         datetime < as.POSIXct('2010-07-15', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Jul 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# #jul 15
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-07-15', tz='UTC') &
+#                         datetime < as.POSIXct('2010-07-16', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Jul 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
+# #jul 23
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-07-23', tz='UTC') &
+#                         datetime < as.POSIXct('2010-07-24', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Jul 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
 
 buoy2010_L1 <- buoy2010_L1 %>% 
   mutate_at(vars(alltemp2007),
             funs(case_when(datetime == as.POSIXct('2010-07-09 8:30', tz='UTC') ~ NA_real_,
-                           TRUE ~ .))) 
+                           datetime == as.POSIXct('2010-07-10 7:10', tz='UTC') ~ NA_real_,
+                           TRUE ~ .))) %>% 
+  mutate_at(vars(TempC_10m, TempC_11m, TempC_13m),
+            funs(case_when(datetime == as.POSIXct('2010-07-02 5:00', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-07-14 10:00', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-07-15 23:10', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-07-23 13:40', tz='UTC') ~ NA_real_,
+                           TRUE ~ .)))
 
 buoy2010_temp_vert_b <- buoy2010_L1 %>%
   select(datetime, location, alltemp2007) %>%
@@ -899,7 +1080,7 @@ buoy2010_temp_vert_b <- buoy2010_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 day') +
 #   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
 #                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-# 
+
 # ggplot(subset(buoy2010_temp_vert,
 #               subset=(datetime >=as.POSIXct('2010-08-01', tz='UTC') &
 #                         datetime < as.POSIXct('2010-09-01', tz='UTC'))),
@@ -913,7 +1094,49 @@ buoy2010_temp_vert_b <- buoy2010_L1 %>%
 #   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
 #                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
 # 
-# #buoy visit/ anamolous points
+# #aug 04
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-08-04', tz='UTC') &
+#                         datetime < as.POSIXct('2010-08-05', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Aug 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
+# #aug 07
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-08-07', tz='UTC') &
+#                         datetime < as.POSIXct('2010-08-08', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Aug 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
+# # aug 14
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-08-14', tz='UTC') &
+#                         datetime < as.POSIXct('2010-08-15', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Aug 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
+# # #buoy visit/ anamolous points aug 21
 # ggplot(subset(buoy2010_temp_vert,
 #               subset=(datetime >=as.POSIXct('2010-08-21', tz='UTC') &
 #                         datetime < as.POSIXct('2010-08-22', tz='UTC'))),
@@ -926,11 +1149,60 @@ buoy2010_temp_vert_b <- buoy2010_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 hour') +
 #   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
 #                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
+# #aug 23
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-08-23', tz='UTC') &
+#                         datetime < as.POSIXct('2010-08-24', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Aug 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
+# #aug 26
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-08-26', tz='UTC') &
+#                         datetime < as.POSIXct('2010-08-27', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Aug 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
+# #aug 29
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-08-29', tz='UTC') &
+#                         datetime < as.POSIXct('2010-08-30', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Aug 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
 
 buoy2010_L1 <- buoy2010_L1 %>% 
   mutate_at(vars(TempC_10m:TempC_13m),
-            funs(case_when(datetime == as.POSIXct('2010-08-21 2:10', tz='UTC') ~ NA_real_,
-               TRUE ~ .))) %>% 
+            funs(case_when(datetime == as.POSIXct('2010-08-04 11:50', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-08-07 18:20', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-08-14 17:30', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-08-14 21:30', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-08-21 2:10', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-08-23 7:20', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-08-26 17:10', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-08-29 5:10', tz='UTC') ~ NA_real_,
+                           TRUE ~ .))) %>% 
   mutate_at(vars(alltemp2007),
             funs(case_when(datetime == as.POSIXct('2010-08-21 13:40', tz='UTC') ~ NA_real_,
                            datetime == as.POSIXct('2010-08-21 19:50', tz='UTC') ~ NA_real_,
@@ -955,6 +1227,104 @@ buoy2010_temp_vert_b <- buoy2010_L1 %>%
 #                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
 # 
 # ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-09-01', tz='UTC') &
+#                         datetime < as.POSIXct('2010-10-01', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Sept 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 day') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
+# #aug 6
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-09-06', tz='UTC') &
+#                         datetime < as.POSIXct('2010-09-07', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Sept 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
+# #aug 12
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-09-12', tz='UTC') &
+#                         datetime < as.POSIXct('2010-09-13', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Sept 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
+# #aug 13
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-09-13', tz='UTC') &
+#                         datetime < as.POSIXct('2010-09-14', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Sept 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
+# #AUG 15
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-09-15', tz='UTC') &
+#                         datetime < as.POSIXct('2010-09-16', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Sept 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# 
+# #AUG 21
+# ggplot(subset(buoy2010_temp_vert,
+#               subset=(datetime >=as.POSIXct('2010-09-21', tz='UTC') &
+#                         datetime < as.POSIXct('2010-09-22', tz='UTC'))),
+#        aes(x=datetime, y=value, color=as.factor(variable))) +
+#   geom_point() +
+#   final_theme +
+#   labs(title='Sept 2010, NAs recoded',
+#        x=NULL,
+#        y='temp deg C') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+
+buoy2010_L1 <- buoy2010_L1 %>% 
+  mutate_at(vars(TempC_10m:TempC_13m),
+            funs(case_when(datetime == as.POSIXct('2010-09-06 16:20', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-09-06 21:50', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-09-12 12:10', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-09-13 21:10', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-09-15 9:10', tz='UTC') ~ NA_real_,
+                           datetime == as.POSIXct('2010-09-21 12:50', tz='UTC') ~ NA_real_,
+                           TRUE ~ .))) 
+
+buoy2010_temp_vert_b <- buoy2010_L1 %>%
+  select(datetime, location, alltemp2007) %>%
+  gather(variable, value, -location, -datetime) %>%
+  mutate(variable = factor(variable, levels=alltemp2007))
+
+# ggplot(subset(buoy2010_temp_vert_b,
 #               subset=(datetime >=as.POSIXct('2010-09-01', tz='UTC') &
 #                         datetime < as.POSIXct('2010-10-01', tz='UTC'))),
 #        aes(x=datetime, y=value, color=as.factor(variable))) +
@@ -1029,8 +1399,8 @@ buoy2010_temp_vert_b <- buoy2010_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 day') +
 #   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
 #                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-# 
-# #data gap thru Nov
+
+# #data gap thru Nov, TESTING IN DEC
 # 
 # ggplot(subset(buoy2010_temp_vert,
 #               subset=(datetime >=as.POSIXct('2010-12-01', tz='UTC') &
@@ -1046,43 +1416,6 @@ buoy2010_temp_vert_b <- buoy2010_L1 %>%
 #                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
 # 
 # ggplot(subset(buoy2010_temp_vert,
-#               subset=(datetime >=as.POSIXct('2010-12-14', tz='UTC') &
-#                         datetime < as.POSIXct('2010-12-15', tz='UTC'))),
-#        aes(x=datetime, y=value, color=as.factor(variable))) +
-#   geom_point() +
-#   final_theme +
-#   labs(title='Dec 2010, NAs recoded',
-#        x=NULL,
-#        y='temp deg C') +
-#   scale_x_datetime(date_minor_breaks = '1 hour') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-# 
-# ggplot(subset(buoy2010_temp_vert,
-#               subset=(datetime >=as.POSIXct('2010-12-15', tz='UTC') &
-#                         datetime < as.POSIXct('2010-12-16', tz='UTC'))),
-#        aes(x=datetime, y=value, color=as.factor(variable))) +
-#   geom_point() +
-#   final_theme +
-#   labs(title='Dec 2010, NAs recoded',
-#        x=NULL,
-#        y='temp deg C') +
-#   scale_x_datetime(date_minor_breaks = '1 hour') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-# 
-# ggplot(subset(buoy2010_temp_vert,
-#               subset=(datetime >=as.POSIXct('2010-12-22', tz='UTC') &
-#                         datetime < as.POSIXct('2010-12-23', tz='UTC'))),
-#        aes(x=datetime, y=value, color=as.factor(variable))) +
-#   geom_point() +
-#   final_theme +
-#   labs(title='Dec 2010, NAs recoded',
-#        x=NULL,
-#        y='temp deg C') +
-#   scale_x_datetime(date_minor_breaks = '1 hour') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
 
 buoy2010_L1 <- buoy2010_L1 %>% 
   mutate_at(vars(alltemp2007),
@@ -1090,36 +1423,22 @@ buoy2010_L1 <- buoy2010_L1 %>%
                            TRUE ~ .))) 
 
 buoy2010_temp_vert_b <- buoy2010_L1 %>%
-  select(datetime, location, alltemp2007) %>%
-  gather(variable, value, -location, -datetime) %>%
+  select(datetime, location, alltemp2007, temp_flag) %>%
+  gather(variable, value, -location, -datetime, -temp_flag) %>%
   mutate(variable = factor(variable, levels=alltemp2007))
 
-# ggplot(subset(buoy2010_temp_vert_b,
-#               subset=(datetime >=as.POSIXct('2010-12-01', tz='UTC') &
-#                         datetime < as.POSIXct('2011-01-01', tz='UTC'))),
-#        aes(x=datetime, y=value, color=as.factor(variable))) +
-#   geom_point() +
-#   final_theme +
-#   labs(title='Dec 2010, NAs recoded',
-#        x=NULL,
-#        y='temp deg C') +
-#   scale_x_datetime(date_minor_breaks = '1 day') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-# 
-# ggplot(subset(buoy2010_temp_vert_b,
-#               subset=(datetime >=as.POSIXct('2010-01-01', tz='UTC') &
-#                         datetime < as.POSIXct('2011-01-01', tz='UTC'))),
-#        aes(x=datetime, y=value, color=as.factor(variable), shape=location)) +
-#   geom_point() +
-#   final_theme +
-#   labs(title='2010, temp clean',
-#        x=NULL,
-#        y='temp deg C') +
-#   scale_x_datetime(date_minor_breaks = '1 month') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-# 
+ggplot(buoy2010_temp_vert_b,
+       aes(x=datetime, y=value, color=as.factor(variable), shape=temp_flag)) +
+  geom_point() +
+  final_theme +
+  labs(title='2010, clean',
+       x=NULL,
+       y='temp deg C') +
+  scale_x_datetime(date_minor_breaks = '1 month') +
+  scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+                              "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+
+
 # #reality check with LMP
 # buoy_LMP_2010 <- buoy2010_temp_vert_b %>%
 #   mutate(source='buoy') %>%
@@ -1521,14 +1840,18 @@ buoy2010_L1 <- buoy2010_L1 %>%
 
 #add presumed cleanings 
 buoy2010_L1 <- buoy2010_L1 %>% 
-  mutate(do_flag = case_when(datetime == as.POSIXct('2010-05-20 11:20', tz='UTC') ~ '1.5wp',
-                              datetime >= as.POSIXct('2010-08-17 14:40', tz='UTC') ~ '1.5wp',
-                              datetime >= as.POSIXct('2010-12-14 11:40', tz='UTC') ~ '1.5wp',
-                              TRUE ~ ''))
+  mutate(do_flag = case_when(datetime == as.POSIXct('2010-05-20 11:20', tz='UTC') ~ 'wp',
+                              datetime == as.POSIXct('2010-08-17 14:40', tz='UTC') ~ 'wp',
+                              datetime == as.POSIXct('2010-12-14 11:40', tz='UTC') ~ 'wp',
+                              TRUE ~ '')) %>% 
+  mutate(do_flag = paste('x', do_flag, sep = ''))
+
+do_vert_b <- buoy2010_L1 %>% 
+  select(datetime, DOSat, DOppm, DOTempC, location, do_flag) %>% 
+  gather(variable, value, -datetime, -location, - do_flag)
 
 
-
-ggplot(do_vert_b, aes(x = datetime, y = value, color = location)) +
+ggplot(do_vert_b, aes(x = datetime, y = value, color = location, shape = do_flag)) +
   geom_point() +
   facet_grid(variable~., scales = 'free_y') +
   final_theme +
@@ -2223,11 +2546,111 @@ buoy2010_L1 <- buoy2010_L1 %>%
 # buoy2010_L1 %>%
 #   select(datetime, location, TempC_0m, TempC_0p5m, TempC_1m, TempC_1p5m, TempC_2m, TempC_2p5m, TempC_3m, TempC_4m, TempC_5m, TempC_6m, TempC_7m, TempC_8m, TempC_9m, TempC_10m, TempC_11m, TempC_13m, temp_flag) %>%
 #   mutate(datetime = as.character(datetime)) %>%
+# rename(TempC_13p5m = 'TempC_13m',
+#        TempC_11p5m = 'TempC_11m',
+#        TempC_10p5m = 'TempC_10m',
+#        TempC_9p5m = 'TempC_9m',
+#        TempC_8p5m = 'TempC_8m',
+#        TempC_7p5m = 'TempC_7m',
+#        TempC_6p5m = 'TempC_6m',
+#        TempC_5p5m = 'TempC_5m',
+#        TempC_4p5m = 'TempC_4m',
+#        TempC_3p5m = 'TempC_3m',
+#        TempC_3m = 'TempC_2p5m',
+#        TempC_2p5m = 'TempC_2m',
+#        TempC_2m = 'TempC_1p5m',
+#        TempC_1p5m = 'TempC_1m',
+#        TempC_1m = 'TempC_0p5m',
+#        TempC_0p5m = 'TempC_0m') %>%
 #   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2010_tempstring_L1.csv')
-# 
+
+#crete vertical dataset
+buoy_2010_L1_vert <- buoy2010_L1 %>%
+  select(datetime, location, TempC_0m, TempC_0p5m, TempC_1m, TempC_1p5m, TempC_2m, TempC_2p5m, TempC_3m, TempC_4m, TempC_5m, TempC_6m, TempC_7m, TempC_8m, TempC_9m, TempC_10m, TempC_11m, TempC_13m, temp_flag) %>%
+  rename(TempC_13p5m = 'TempC_13m',
+         TempC_11p5m = 'TempC_11m',
+         TempC_10p5m = 'TempC_10m',
+         TempC_9p5m = 'TempC_9m',
+         TempC_8p5m = 'TempC_8m',
+         TempC_7p5m = 'TempC_7m',
+         TempC_6p5m = 'TempC_6m',
+         TempC_5p5m = 'TempC_5m',
+         TempC_4p5m = 'TempC_4m',
+         TempC_3p5m = 'TempC_3m',
+         TempC_3m = 'TempC_2p5m',
+         TempC_2p5m = 'TempC_2m',
+         TempC_2m = 'TempC_1p5m',
+         TempC_1p5m = 'TempC_1m',
+         TempC_1m = 'TempC_0p5m',
+         TempC_0p5m = 'TempC_0m') %>%
+  gather(depth_m, temp_degC, -datetime, -location, -temp_flag) %>% 
+  mutate(depth_m = case_when(grepl(pattern = '_0p5m', x = depth_m) ~ '0.5',
+                             grepl(pattern ='_1m', x = depth_m) ~ '1',
+                             grepl(pattern = '_1p5m', x = depth_m) ~ '1.5',
+                             grepl(pattern = '_2m', x = depth_m) ~ '2',
+                             grepl(pattern = '_2p5m', x = depth_m) ~ '2.5',
+                             grepl(pattern = '_3m', x = depth_m) ~ '3',
+                             grepl(pattern = '_3p5m', x = depth_m) ~ '3.5',
+                             grepl(pattern = '_4p5m', x = depth_m) ~ '4.5',
+                             grepl(pattern = '_5p5m', x = depth_m) ~ '5.5',
+                             grepl(pattern = '_6p5m', x = depth_m) ~ '6.5',
+                             grepl(pattern = '_7p5m', x = depth_m) ~ '7.5',
+                             grepl(pattern = '_8p5m', x = depth_m) ~ '8.5',
+                             grepl(pattern = '_9p5m', x = depth_m) ~ '9.5',
+                             grepl(pattern = '_10p5m', x = depth_m) ~ '10.5',
+                             grepl(pattern = '_11p5m', x = depth_m) ~ '11.5',
+                             grepl(pattern = '_13p5m', x = depth_m) ~ '13.5',
+                             TRUE ~ NA_character_)) %>% 
+  mutate(depth_m = as.numeric(depth_m))
+
+#parse out flags
+unique(buoy_2010_L1_vert$temp_flag)
+
+#ONLY ONE FLAG APPLICABLE TO ALL, CAN LEAVE AS IS, add 'i' flag
+buoy_2010_L1_vert <-   buoy_2010_L1_vert %>% 
+  mutate(temp_flag = case_when(!is.na(temp_degC) & temp_flag == 's' ~ 's, i, n',
+                               TRUE ~ ''))
+
+unique(buoy_2010_L1_vert$temp_flag)
+
+#add flags to 11.5-13.5 as possibly in sediment
+buoy_2010_L1_vert <-   buoy_2010_L1_vert %>% 
+  mutate(temp_flag = case_when(!is.na(temp_degC) & depth_m >= 11.5 & temp_flag == '' ~ 'b',
+                               !is.na(temp_degC) & depth_m >= 11.5 & temp_flag != '' ~ paste(temp_flag, 'b', sep = ', '),
+                               TRUE ~ temp_flag))
+
+#add flag to 1m to for possibly damaged sensor 'x'
+buoy_2010_L1_vert <-   buoy_2010_L1_vert %>% 
+  mutate(temp_flag = case_when(!is.na(temp_degC) & depth_m == 1 & temp_flag == '' ~ 'x',
+                               !is.na(temp_degC) & depth_m == 1 & temp_flag != '' ~ paste(temp_flag, 'x', sep = ', '),
+                               TRUE ~ temp_flag))
+
+
+unique(buoy_2010_L1_vert$temp_flag)                               
+
+#plot to check
+ggplot(buoy_2010_L1_vert, aes(x = datetime, y = temp_degC, color = as.factor(depth_m))) +
+  geom_point() +
+  scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+                              "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+
+ggplot(buoy_2010_L1_vert, aes(x = datetime, y = temp_degC, color = as.factor(depth_m))) +
+  geom_point(aes(shape = temp_flag)) +
+  scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
+                              "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+
+#order by date, depth
+buoy_2010_L1_vert <- buoy_2010_L1_vert %>% 
+  arrange(datetime, depth_m)
+
+# buoy_2010_L1_vert %>%
+#   mutate(datetime = as.character(datetime)) %>%
+#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2010_tempstring_vert_L1.csv')
+
 # # export L1 do file
 # buoy2010_L1 %>%
 #   select(datetime, location, DOSat, DOppm, DOTempC, do_flag) %>%
+#   rename(upper_do_flag = 'do_flag') %>% 
 #   mutate(datetime = as.character(datetime)) %>%
 #   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2010_do_L1.csv')
 # 
