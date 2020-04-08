@@ -1,3 +1,15 @@
+#*****************************************************************
+#*      Cary Institute of Ecosystem Studies (Millbrook, NY)      *
+#*                      Weathers Lab                             *
+#*                                                               *
+#* TITLE:   library_func_lists.R                                 *
+#* PROJECT: SunapeeBuoy.RProj                                    *
+#* AUTHOR:  Bethel Steele                                        *
+#* SYSTEM:  Lenovo ThinkCentre, Win 10, R 3.6.1, RStudio 1.2.5001*
+#* DATE:    01Apr2020                                            *
+#* PURPOSE: QAQC and collate buoy data                           *
+#*****************************************************************
+
 library(tidyverse)
 library(ggthemes)
 library(readxl)
@@ -18,7 +30,6 @@ final_theme=theme_bw() +
 alltemp <- c("TempC_0m", "TempC_1m", "TempC_2m", "TempC_3m", "TempC_4m", "TempC_5m", "TempC_6m", "TempC_7m", "TempC_8m", "TempC_9m", "TempC_10m")
 alltemp2011 <- c("TempC_0m", "TempC_1m", "TempC_2m", "TempC_3m", "TempC_4m", "TempC_5m", "TempC_6m", "TempC_7m", "TempC_8m", "TempC_9m")
 alltemp2007 <- c("TempC_0m", "TempC_0p5m", "TempC_1m", "TempC_1p5m", "TempC_2m", "TempC_2p5m", "TempC_3m", "TempC_4m", "TempC_5m", "TempC_6m", "TempC_7m", "TempC_8m", "TempC_9m", "TempC_10m", "TempC_11m", "TempC_13m")
-alltemp2007LMP <- c("TempC_0m", "TempC_0p5m", "TempC_1m", "TempC_1p5m", "TempC_2m", "TempC_2p5m", "TempC_3m", "TempC_4m", "TempC_5m", "TempC_6m", "TempC_7m", "TempC_8m", "TempC_9m", "TempC_10m", "TempC_11m", "TempC_12m", "TempC_13m", "TempC_14m")
 upDO <- c("DOTempC", "DOSat", "DOppm")
 lowDO <- c("DOLowTempC", "DOLowSat", "DOLowPPM")
 chla <- c('Chlor_RFU', 'Chlor_UGL', 'SpecCond')

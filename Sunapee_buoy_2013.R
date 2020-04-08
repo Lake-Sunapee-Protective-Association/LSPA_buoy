@@ -24,38 +24,6 @@ buoy2013_L0 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy d
   mutate(datetime = as.POSIXct(datetime, format='%Y-%m-%d %H:%M', tz='UTC'))
 
 
-# #bring in 2013 LMP data for comparison
-# LMP2013 <- read_xlsx('C:/Users/steeleb/Dropbox/Lake Sunapee/long term Sunapee data/raw data/LMP files/LMP 2017/DO.xlsx',
-#                      sheet='DO',
-#                      col_types = c('text', 'text', 'numeric', 'guess', 'numeric',
-#                                    'numeric', 'numeric', 'numeric', 'numeric' ,'numeric',
-#                                    'text', 'text', 'numeric', 'text')) %>%
-#   mutate(DATE = as.Date(DATE, format='%Y-%m-%d')) %>%  #format date
-#   filter(DATE >= '2013-01-01' & DATE < '2014-01-01', #filter for 2013 only
-#          STATION == 210)
-# 
-# LMP2013_temp <- LMP2013 %>%
-#   select(DATE, DEPTH, TEMP) %>%
-#   filter(DEPTH<=12) %>%
-#   rename(variable = 'DEPTH',
-#          value = 'TEMP',
-#          datetime = 'DATE') %>%
-#   mutate(source = 'LMP',
-#          datetime = as.POSIXct(paste(datetime, '12:00', sep=' '), format = '%Y-%m-%d %H:%M', tz='UTC'),
-#          variable = as.factor(variable),
-#          variable = case_when(variable == '0.5' ~ 'TempC_0p5m',
-#                               variable == '1' ~ 'TempC_1m',
-#                               variable == '2' ~ 'TempC_2m',
-#                               variable == '3' ~ 'TempC_3m',
-#                               variable == '4' ~ 'TempC_4m',
-#                               variable == '5' ~ 'TempC_5m',
-#                               variable == '6' ~ 'TempC_6m',
-#                               variable == '7' ~ 'TempC_7m',
-#                               variable == '8' ~ 'TempC_8m',
-#                               variable == '9' ~ 'TempC_9m',
-#                               variable == '10' ~ 'TempC_10m',
-#                               variable == '11' ~ 'TempC_11m',
-#                               variable == '12' ~ 'TempC_12m'))
 
 #create dummy timestamp so there are no blanks
 alltimes_2013 <- as.data.frame(seq.POSIXt(as.POSIXct('2013-01-01 00:00', tz='UTC'), as.POSIXct('2013-12-31 23:50', tz='UTC'), '10 min')) %>% 
@@ -65,7 +33,20 @@ buoy2013_L1 <- buoy2013_L0 %>%
   right_join(., alltimes_2013) %>% 
   arrange(datetime)
 
-#### thermisters ####
+#double check to make sure there are no DST issues
+datelength2013 <- buoy2013_L1 %>% 
+  mutate(date = format(datetime, '%Y-%m-%d')) %>% 
+  group_by(date) %>% 
+  summarize(length(datetime))
+max(datelength2013$`length(datetime)`)
+min(datelength2013$`length(datetime)`)
+#should only be 144 or less if partial days included
+
+#clean up workspace
+rm(datelength2013, alltimes_2013)
+
+
+#### thermistors ####
 buoy2013_temp_vert <- buoy2013_L1 %>%
   select(datetime, alltemp2011) %>%
   gather(variable, value, -datetime) %>% 
@@ -302,7 +283,7 @@ buoy2013_temp_vert_b <- buoy2013_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 day') +
 #   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
 #                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
- 
+#  
 ggplot(subset(buoy2013_temp_vert_b),
        aes(x=datetime, y=value, color=variable)) +
   geom_point() +
@@ -314,68 +295,21 @@ ggplot(subset(buoy2013_temp_vert_b),
   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
 
-# #reality check with LMP
-# buoy_LMP_2013 <- buoy2013_temp_vert_b %>%
-#   mutate(source='buoy') %>%
-#   full_join(., LMP2013_temp) %>%
-#   select(-location) %>% 
-#   mutate(variable = factor(variable, levels = alltemp2007LMP))
-# 
-# #June 17, July 15, Aug 19, Sept 17
-# ggplot(subset(buoy_LMP_2013,
-#               subset=(datetime>=as.POSIXct('2013-06-17', tz='UTC') &
-#                         datetime<as.POSIXct('2013-06-18', tz='UTC'))),
-#               aes(x=datetime, y=value, color=variable, shape = source)) +
-#   geom_point() +
-#   final_theme +
-#   labs(title='temp reality check\n2013 buoy and LMP site 210 data\nJune 17, 2013',
-#        x=NULL,
-#        y='temp (deg C)') +
-#   scale_x_datetime(date_minor_breaks = '1 hour') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-# 
-# ggplot(subset(buoy_LMP_2013,
-#               subset=(datetime>=as.POSIXct('2013-07-15', tz='UTC') &
-#                         datetime<as.POSIXct('2013-07-16', tz='UTC'))),
-#        aes(x=datetime, y=value, color=variable, shape = source)) +
-#   geom_point() +
-#   final_theme +
-#   labs(title='temp reality check\n2013 buoy and LMP site 210 data\nJuly 15, 2013',
-#        x=NULL,
-#        y='temp (deg C)') +
-#   scale_x_datetime(date_minor_breaks = '1 hour') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-# 
-# ggplot(subset(buoy_LMP_2013,
-#               subset=(datetime>=as.POSIXct('2013-08-19', tz='UTC') &
-#                         datetime<as.POSIXct('2013-08-20', tz='UTC'))),
-#        aes(x=datetime, y=value, color=variable, shape = source)) +
-#   geom_point() +
-#   final_theme +
-#   labs(title='temp reality check\n2013 buoy and LMP site 210 data\nAugust 19, 2013',
-#        x=NULL,
-#        y='temp (deg C)') +
-#   scale_x_datetime(date_minor_breaks = '1 hour') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-# 
-# ggplot(subset(buoy_LMP_2013,
-#               subset=(datetime>=as.POSIXct('2013-09-17', tz='UTC') &
-#                         datetime<as.POSIXct('2013-09-18', tz='UTC'))),
-#        aes(x=datetime, y=value, color=variable, shape = source)) +
-#   geom_point() +
-#   final_theme +
-#   labs(title='temp reality check\n2013 buoy and LMP site 210 data\nSeptember 17, 2013',
-#        x=NULL,
-#        y='temp (deg C)') +
-#   scale_x_datetime(date_minor_breaks = '1 hour') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-# 
+#correct sensors for offset
+buoy2013_L1 <- buoy2013_L1 %>% 
+  rename(TempC_9p5m = 'TempC_9m',
+         TempC_8p5m = 'TempC_8m',
+         TempC_7p5m = 'TempC_7m',
+         TempC_6p5m = 'TempC_6m',
+         TempC_5p5m = 'TempC_5m',
+         TempC_4p5m = 'TempC_4m',
+         TempC_3p5m = 'TempC_3m',
+         TempC_2p5m = 'TempC_2m',
+         TempC_1p5m = 'TempC_1m',
+         TempC_0p5m = 'TempC_0m')
+
 #clean up workspace
-rm(buoy_LMP_2013, buoy2013_temp_vert, buoy2013_temp_vert_b, LMP2013_temp)
+rm(buoy2013_temp_vert, buoy2013_temp_vert_b)
 
 
 #### DO sensors ####
@@ -405,7 +339,9 @@ buoy2013_L1 <- buoy2013_L1 %>%
                              TRUE ~ .))) %>% 
   mutate_at(vars(DOLowSat, DOLowPPM, DOLowTempC),
             funs(case_when(. == 0 ~ NA_real_,
-                           TRUE ~ .)))
+                           TRUE ~ .))) %>% 
+  mutate(upper_do_flag = NA_character_,
+         lower_do_flag = NA_character_)
 
 do_vert <- buoy2013_L1 %>% 
   select(datetime, DOSat, DOppm, DOTempC, DOLowSat, DOLowPPM, DOLowTempC) %>% 
@@ -492,7 +428,7 @@ ggplot(do_vert, aes(x = datetime, y = value)) +
 #        x = NULL,
 #        y = NULL) +
 #   scale_x_datetime(date_minor_breaks = '1 hour')
-
+# 
 buoy2013_L1 <- buoy2013_L1 %>% 
   mutate_at(vars(DOSat, DOppm, DOTempC),
             funs(case_when(datetime >= as.POSIXct('2013-05-15 9:40', tz='UTC') &
@@ -502,7 +438,7 @@ buoy2013_L1 <- buoy2013_L1 %>%
                               datetime >= as.POSIXct('2013-05-15 9:40', tz='UTC') &
                                 datetime < as.POSIXct('2013-05-15 11:50', tz='UTC') ~ 'in transit',
                               datetime >= as.POSIXct('2013-05-15 11:50', tz='UTC') ~'loon',
-                              TRUE ~ ''))
+                              TRUE ~ location))
 
 do_vert_b <- buoy2013_L1 %>% 
   select(datetime, location, DOSat, DOppm, DOTempC) %>% 
@@ -595,13 +531,14 @@ do_vert_b <- buoy2013_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 hour')
 
 buoy2013_L1 <- buoy2013_L1 %>% 
-  mutate_at(vars(DOLowSat, DOLowPPM),
-            funs(case_when(datetime < as.POSIXct('2013-09-25 15:00', tz='UTC') ~ NA_real_,
-                           TRUE ~ .))) %>%
-  mutate(upper_do_flag = case_when(datetime == as.POSIXct('2013-09-25 15:00', tz='UTC') ~'cp',
-                              TRUE ~ '')) %>%
+  mutate(upper_do_flag = case_when(datetime == as.POSIXct('2013-05-15 11:50', tz='UTC') ~ 'cp',
+                                   datetime == as.POSIXct('2013-09-25 15:00', tz='UTC') ~ 'cp',
+                                   datetime <  as.POSIXct('2013-09-25 15:00', tz='UTC') & is.na(upper_do_flag) ~ 'x',
+                                   datetime <  as.POSIXct('2013-09-25 15:00', tz='UTC') & !is.na(upper_do_flag) ~ paste('x', upper_do_flag, sep = ', '),
+                                   TRUE ~ upper_do_flag)) %>%
   mutate(lower_do_flag = case_when(datetime == as.POSIXct('2013-09-25 15:00', tz='UTC') ~'cp',
-                                   TRUE ~ ''))
+                                   datetime > as.POSIXct('2013-09-10 9:00', tz='UTC') & datetime < as.POSIXct('2013-09-25 15:00', tz='UTC') ~ 'x',
+                                   TRUE ~ lower_do_flag)) 
 
 do_vert_b <- buoy2013_L1 %>% 
   select(datetime, location, DOSat, DOppm, DOTempC, DOLowSat, DOLowPPM, DOLowTempC) %>% 
@@ -644,7 +581,7 @@ do_vert_b <- buoy2013_L1 %>%
 #        x = NULL,
 #        y = NULL) +
 #   scale_x_datetime(date_minor_breaks = '1 hour')
-
+# 
 buoy2013_L1 <- buoy2013_L1 %>% 
   mutate_at(vars(lowDO, upDO),
             funs(case_when(datetime >= as.POSIXct('2013-10-16 9:10', tz='UTC') &
@@ -671,29 +608,6 @@ do_vert_b <- buoy2013_L1 %>%
 #        y = NULL) +
 #   scale_x_datetime(date_minor_breaks = '1 day')
 # 
-# ggplot(subset(do_vert,
-#               subset = (datetime >= as.POSIXct('2013-11-01', tz='UTC') &
-#                           datetime < as.POSIXct('2013-12-01', tz='UTC'))),
-#        aes(x = datetime, y = value)) +
-#   geom_point() +
-#   facet_grid(variable~., scales = 'free_y') +
-#   final_theme +
-#   labs(title = 'nov 2013 DO data raw',
-#        x = NULL,
-#        y = NULL) +
-#   scale_x_datetime(date_minor_breaks = '1 day')
-# 
-# ggplot(subset(do_vert,
-#               subset = (datetime >= as.POSIXct('2013-12-01', tz='UTC') &
-#                           datetime < as.POSIXct('2014-01-01', tz='UTC'))),
-#        aes(x = datetime, y = value)) +
-#   geom_point() +
-#   facet_grid(variable~., scales = 'free_y') +
-#   final_theme +
-#   labs(title = 'dec 2013 DO data raw',
-#        x = NULL,
-#        y = NULL) +
-#   scale_x_datetime(date_minor_breaks = '1 day')
 
 buoy2013_L1 <- buoy2013_L1 %>% 
   mutate(location = case_when(datetime >= as.POSIXct('2013-10-23 11:00', tz='UTC')  ~ 'offline',
@@ -710,17 +624,14 @@ buoy2013_L1 <- buoy2013_L1 %>%
 
 #add presumed cleaning flags
 buoy2013_L1 <- buoy2013_L1 %>% 
-  mutate(upper_do_flag = case_when(datetime == as.POSIXct('2013-05-15 11:50') ~ 'wp',
-                             datetime == as.POSIXct('2013-10-16 10:10') ~ 'wp',
-                             TRUE ~ upper_do_flag)) %>% 
-  mutate(upper_do_flag = case_when(datetime < as.POSIXct('2013-09-25 15:00', tz='UTC') ~ paste('x', upper_do_flag, sep = ''),
+  mutate(upper_do_flag = case_when(datetime == as.POSIXct('2013-10-16 10:10') ~ 'wp',
                                    TRUE ~ upper_do_flag)) 
 
 do_vert_up <- buoy2013_L1 %>% 
   select(datetime, location,DOSat, DOppm, DOTempC, upper_do_flag) %>% 
   gather(variable, value, -datetime, -location, -upper_do_flag)
 
-ggplot(do_vert_up, aes(x = datetime, y = value, color = location, shape = upper_do_flag)) +
+ggplot(do_vert_up, aes(x = datetime, y = value, color = upper_do_flag, shape = location)) +
   geom_point() +
   facet_grid(variable~., scales = 'free_y') +
   final_theme +
@@ -733,7 +644,7 @@ do_vert_lo <- buoy2013_L1 %>%
   select(datetime, location, DOLowSat, DOLowPPM, DOLowTempC, lower_do_flag) %>% 
   gather(variable, value, -datetime, -location, -lower_do_flag)
 
-ggplot(do_vert_lo, aes(x = datetime, y = value, color = location, shape = lower_do_flag)) +
+ggplot(do_vert_lo, aes(x = datetime, y = value, color = lower_do_flag, shape = location)) +
   geom_point() +
   facet_grid(variable~., scales = 'free_y') +
   final_theme +
@@ -742,10 +653,13 @@ ggplot(do_vert_lo, aes(x = datetime, y = value, color = location, shape = lower_
        y = NULL) +
   scale_x_datetime(date_minor_breaks = '1 month')
 
+#clean up workspace
+rm(do_vert, do_vert_b, do_vert_lo, do_vert_up)
+
 #### column issues ####
 #with addition of sensors, columns off. need to split file and rejoin with proper column names
 buoy2013_L1_a <- buoy2013_L1 %>% 
-  select(datetime, DOTempC, DOSat, DOppm, TempC_0m, TempC_1m, TempC_2m, TempC_3m, TempC_4m, TempC_5m, TempC_6m, TempC_7m, TempC_8m, TempC_9m, DOLowTempC, DOLowSat, DOLowPPM, location, upper_do_flag, lower_do_flag)
+  select(datetime, DOTempC, DOSat, DOppm,TempC_0p5m:TempC_9p5m, DOLowTempC, DOLowSat, DOLowPPM, location, upper_do_flag, lower_do_flag)
 
 buoy2013_L1_b <- buoy2013_L1 %>% 
   select(datetime, AirTempC, RH, PAR, WindSp, CorrWind, AveWindSp, AveWindDir, MaxWindSp, MaxWindDir, LoggerBat) %>% 
@@ -843,19 +757,18 @@ ggplot(wind_vert, aes(x = datetime, y = value)) +
 #   scale_x_datetime(date_minor_breaks = '1 hour')
 
 buoy2013_L1 <- buoy2013_L1 %>% 
-  mutate_at(vars(WindSp, CorrWind, AveWindSp, AveWindDir, MaxWindSp, MaxWindDir),
-            funs(case_when(datetime >= as.POSIXct('2013-01-16 12:20', tz='UTC') &
-                             datetime < as.POSIXct('2013-01-17 10:00', tz='UTC') ~ NA_real_,
-                           TRUE ~ .)))
+  mutate(wind_flag = case_when(datetime >= as.POSIXct('2013-01-16 12:20', tz='UTC') &
+                                 datetime < as.POSIXct('2013-01-17 10:00', tz='UTC') ~ 's',
+                               TRUE ~ NA_character_))
 
 wind_vert_b <- buoy2013_L1 %>% 
-  select(datetime, WindSp, CorrWind, AveWindSp, AveWindDir, MaxWindSp, MaxWindDir) %>% 
-  gather(variable, value, -datetime)
+  select(datetime, WindSp, CorrWind, AveWindSp, AveWindDir, MaxWindSp, MaxWindDir, wind_flag) %>% 
+  gather(variable, value, -datetime, -wind_flag)
 
 # ggplot(subset(wind_vert_b,
 #               subset=(datetime>=as.POSIXct('2013-01-01', tz='UTC') &
 #                         datetime<as.POSIXct('2013-02-01', tz='UTC'))),
-#        aes(x = datetime, y = value)) +
+#        aes(x = datetime, y = value, color = wind_flag)) +
 #   geom_point() +
 #   facet_grid(variable~., scales = 'free_y') +
 #   final_theme +
@@ -947,6 +860,18 @@ wind_vert_b <- buoy2013_L1 %>%
 #        x = NULL,
 #        y = NULL) +
 #   scale_x_datetime(date_minor_breaks = '1 day')
+# #look at jul 9-10
+# ggplot(subset(wind_vert,
+#               subset=(datetime>=as.POSIXct('2013-07-09 12:00', tz='UTC') &
+#                         datetime<as.POSIXct('2013-07-10 12:00', tz='UTC'))),
+#        aes(x = datetime, y = value)) +
+#   geom_point() +
+#   facet_grid(variable~., scales = 'free_y') +
+#   final_theme +
+#   labs(title = 'jul 2013 wind data NAs recoded',
+#        x = NULL,
+#        y = NULL) +
+#   scale_x_datetime(date_minor_breaks = '1 hour')
 # 
 # ggplot(subset(wind_vert,
 #               subset=(datetime>=as.POSIXct('2013-08-01', tz='UTC') &
@@ -1007,10 +932,10 @@ buoy2013_L1 <- buoy2013_L1 %>%
                            TRUE ~ .)))
 
 wind_vert_b <- buoy2013_L1 %>% 
-  select(datetime, location, WindSp, CorrWind, AveWindSp, AveWindDir, MaxWindSp, MaxWindDir) %>% 
-  gather(variable, value, -datetime, -location)
+  select(datetime, location, WindSp, CorrWind, AveWindSp, AveWindDir, MaxWindSp, MaxWindDir, wind_flag) %>% 
+  gather(variable, value, -datetime, -location, -wind_flag)
 
-ggplot(wind_vert_b, aes(x = datetime, y = value, color = location)) +
+ggplot(wind_vert_b, aes(x = datetime, y = value, shape = location, color = wind_flag)) +
   geom_point() +
   facet_grid(variable~., scales = 'free_y') +
   final_theme +
@@ -1019,6 +944,8 @@ ggplot(wind_vert_b, aes(x = datetime, y = value, color = location)) +
        y = NULL) +
   scale_x_datetime(date_minor_breaks = '1 month')
 
+#clean up workspace
+rm(wind_vert, wind_vert_b)
 
 #### PAR sensors ####
 range(buoy2013_L1$PAR, na.rm = T)
@@ -1028,8 +955,11 @@ range(buoy2013_L1$PAR, na.rm = T)
 #   final_theme
 
 buoy2013_L1 <-  buoy2013_L1 %>%
+  mutate(PAR_flag = case_when(PAR <0 ~ 'z',
+                         TRUE ~ NA_character_)) %>% 
   mutate(PAR = case_when(PAR <0 ~ 0,
                          TRUE ~ PAR))
+
 
 ggplot(buoy2013_L1, aes(x = datetime, y = PAR)) +
   geom_point() +
@@ -1326,106 +1256,53 @@ ggplot(buoy2013_L1,
 
 
 #### EXPORT L1 FILES ####
-
-#recode flags when buoy offline
+colnames(buoy2013_L1)
+#recode flags and data when buoy offline / in transit 
 buoy2013_L1 <-  buoy2013_L1 %>% 
-  mutate(upper_do_flag = case_when(location == 'offline' ~ '',
-                             TRUE ~ upper_do_flag))  %>% 
-  mutate(lower_do_flag = case_when(location == 'offline' ~ '',
-                                   TRUE ~ lower_do_flag))
-
-# #export L1 tempstring file
-# buoy2013_L1 %>%
-#   select(datetime, location, alltemp2011) %>%
-#   rename(TempC_9p5m = 'TempC_9m',
-#          TempC_8p5m = 'TempC_8m',
-#          TempC_7p5m = 'TempC_7m',
-#          TempC_6p5m = 'TempC_6m',
-#          TempC_5p5m = 'TempC_5m',
-#          TempC_4p5m = 'TempC_4m',
-#          TempC_3p5m = 'TempC_3m',
-#          TempC_2p5m = 'TempC_2m',
-#          TempC_1p5m = 'TempC_1m',
-#          TempC_0p5m = 'TempC_0m') %>%
-#   mutate(datetime = as.character(datetime)) %>%
-#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2013_tempstring_L1.csv')
-
-#crete vertical dataset
-buoy_2013_L1_vert <- buoy2013_L1 %>%
-  select(datetime, location, TempC_0m, TempC_1m, TempC_2m, TempC_3m, TempC_4m, TempC_5m, TempC_6m, TempC_7m, TempC_8m, TempC_9m) %>%
-  rename(TempC_9p5m = 'TempC_9m',
-         TempC_8p5m = 'TempC_8m',
-         TempC_7p5m = 'TempC_7m',
-         TempC_6p5m = 'TempC_6m',
-         TempC_5p5m = 'TempC_5m',
-         TempC_4p5m = 'TempC_4m',
-         TempC_3p5m = 'TempC_3m',
-         TempC_2p5m = 'TempC_2m',
-         TempC_1p5m = 'TempC_1m',
-         TempC_0p5m = 'TempC_0m') %>%
-  gather(depth_m, temp_degC, -datetime, -location) %>% 
-  mutate(depth_m = case_when(grepl(pattern = '_0p5m', x = depth_m) ~ '0.5',
-                             grepl(pattern = '_1p5m', x = depth_m) ~ '1.5',
-                             grepl(pattern = '_2p5m', x = depth_m) ~ '2.5',
-                             grepl(pattern = '_3p5m', x = depth_m) ~ '3.5',
-                             grepl(pattern = '_4p5m', x = depth_m) ~ '4.5',
-                             grepl(pattern = '_5p5m', x = depth_m) ~ '5.5',
-                             grepl(pattern = '_6p5m', x = depth_m) ~ '6.5',
-                             grepl(pattern = '_7p5m', x = depth_m) ~ '7.5',
-                             grepl(pattern = '_8p5m', x = depth_m) ~ '8.5',
-                             grepl(pattern = '_9p5m', x = depth_m) ~ '9.5',
-                             TRUE ~ NA_character_)) %>% 
-  mutate(depth_m = as.numeric(depth_m))
+  mutate_at(vars(upper_do_flag, lower_do_flag, wind_flag, PAR_flag),
+            funs(case_when(location == 'offline' | location == 'in transit' ~ NA_character_,
+                           TRUE ~ .))) %>% 
+  mutate_at(vars(AirTempC:DOLowPPM),
+            funs(case_when(location == 'offline' | location == 'in transit' ~ NA_real_,
+                           TRUE ~ .)))
 
 
-#no flags to parse                   
+#export L1 tempstring file
+buoy2013_L1 %>%
+  select(datetime, location, TempC_0p5m:TempC_9p5m) %>%
+  mutate(datetime = as.character(datetime)) %>%
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/tempstring/2013_tempstring_L1.csv')
 
-#plot to check
-ggplot(buoy_2013_L1_vert, aes(x = datetime, y = temp_degC, color = as.factor(depth_m))) +
-  geom_point() +
-  scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-                              "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
+# export L1 DO file
+buoy2013_L1 %>%
+  select(datetime, location, DOSat, DOppm, DOTempC, DOLowSat, DOLowPPM, DOLowTempC, upper_do_flag, lower_do_flag) %>%
+  mutate(datetime = as.character(datetime)) %>%
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/2013_do_L1.csv')
 
+#export wind file
+buoy2013_L1 %>%
+  select(datetime, location, WindSp, CorrWind, AveWindSp, AveWindDir, MaxWindSp, MaxWindDir, wind_flag) %>%
+  mutate(datetime = as.character(datetime)) %>%
+  rename(WindSp_ms = 'WindSp',
+         WindDir_deg = 'CorrWind',
+         AveWindSp_ms = 'AveWindSp',
+         AveWindDir_deg = 'AveWindDir',
+         MaxWindSp_ms = 'MaxWindSp',
+         MaxWindDir_deg = 'MaxWindDir') %>%
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2013_wind_L1.csv')
 
-#order by date, depth
-buoy_2013_L1_vert <- buoy_2013_L1_vert %>% 
-  arrange(datetime, depth_m)
+#export PAR file
+buoy2013_L1 %>%
+  select(datetime, location, PAR, PAR_flag) %>%
+  mutate(datetime = as.character(datetime)) %>%
+  rename(PAR_umolm2s = 'PAR') %>%
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2013_PAR_L1.csv')
 
-# buoy_2013_L1_vert %>%
-#   mutate(datetime = as.character(datetime)) %>%
-#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2013_tempstring_vert_L1.csv')
-# 
-# 
-# # export L1 DO file
-# buoy2013_L1 %>%
-#   select(datetime, location, DOSat, DOppm, DOTempC, DOLowSat, DOLowPPM, DOLowTempC, upper_do_flag, lower_do_flag) %>%
-#   mutate(datetime = as.character(datetime)) %>%
-#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2013_do_L1.csv')
-# 
-# #export wind file
-# buoy2013_L1 %>%
-#   select(datetime, location, WindSp, CorrWind, AveWindSp, AveWindDir, MaxWindSp, MaxWindDir) %>%
-#   mutate(datetime = as.character(datetime)) %>%
-#   rename(WindSp_ms = 'WindSp',
-#          WindDir_deg = 'CorrWind',
-#          AveWindSp_ms = 'AveWindSp',
-#          AveWindDir_deg = 'AveWindDir',
-#          MaxWindSp_ms = 'MaxWindSp',
-#          MaxWindDir_deg = 'MaxWindDir') %>%
-#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2013_wind_L1.csv')
-# 
-# #export PAR file
-# buoy2013_L1 %>%
-#   select(datetime, location, PAR) %>%
-#   mutate(datetime = as.character(datetime)) %>%
-#   rename(PAR_umolm2s = 'PAR') %>%
-#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2013_PAR_L1.csv')
-# 
-# #export air temp file
-# buoy2013_L1 %>%
-#   select(datetime, location, AirTempC) %>%
-#   mutate(datetime = as.character(datetime)) %>%
-#   rename(AirTemp_degC = 'AirTempC') %>%
-#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2013_AirTemp_L1.csv')
-# 
+#export air temp file
+buoy2013_L1 %>%
+  select(datetime, location, AirTempC) %>%
+  mutate(datetime = as.character(datetime)) %>%
+  rename(AirTemp_degC = 'AirTempC') %>%
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2013_AirTemp_L1.csv')
+
 

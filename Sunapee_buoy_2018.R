@@ -11,42 +11,11 @@
 #*****************************************************************
 
 #bring in  buoy raw data
-buoy2018 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L0/2018 Buoy Data - through Oct.csv',
+buoy2018_L0 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L0/2018 Buoy Data - through Oct.csv',
                      col_types = 'iiiinnnnnnnnnnnnnnnnnnnnnnnnnnnnnn')
 
-#bring in 2018 LMP data for comparison - no 2018 data yet
-# LMP2018 <- read_xlsx('C:/Users/steeleb/Dropbox/Lake Sunapee/long term Sunapee data/raw data/LMP files/LMP 2018/DO.xlsx',
-#                      sheet='DO',
-#                      col_types = c('text', 'text', 'numeric', 'guess', 'numeric',
-#                                    'numeric', 'numeric', 'numeric', 'numeric' ,'numeric',
-#                                    'text', 'text', 'numeric', 'text')) %>%
-#   mutate(DATE = as.Date(DATE, format='%Y-%m-%d')) %>%  #format date
-#   filter(DATE >= '2018-01-01' & DATE < '2018-01-01', #filter for 2018 only
-#          STATION == 210)
-# 
-# LMP2018_bio <- read_xlsx('C:/Users/steeleb/Dropbox/Lake Sunapee/long term Sunapee data/raw data/LMP files/LMP 2018/BIOLOGY.xlsx',
-#                          sheet='BIOLOGY',
-#                          col_types = c('text', 'text', 'numeric', 'guess', 'numeric',
-#                                        'numeric', 'text', 'numeric', 'text' ,'numeric',
-#                                        'text', 'numeric', 'numeric', 'numeric', 'text',
-#                                        'text', 'text', 'text')) %>%
-#   mutate(DATE = as.Date(DATE, format='%Y-%m-%d')) %>%  #format date
-#   filter(DATE >= '2018-01-01' & DATE < '2018-01-01', #filter for 2018 only
-#          STATION == 210)
-# 
-# LMP2018_chem <- read_xlsx('C:/Users/steeleb/Dropbox/Lake Sunapee/long term Sunapee data/raw data/LMP files/LMP 2018/CHEMISTRY.xlsx',
-#                           sheet='CHEMISTRY',
-#                           col_types = c('text', 'text', 'numeric', 'guess', 'numeric',
-#                                         'text', 'numeric', 'numeric', 'numeric' ,'numeric',
-#                                         'numeric', 'numeric', 'numeric', 'numeric', 'numeric',
-#                                         'text', 'text', 'guess', 'text', 'text')) %>%
-#   mutate(DATE = as.Date(DATE, format='%Y-%m-%d')) %>%  #format date
-#   filter(DATE >= '2018-01-01' & DATE < '2018-01-01', #filter for 2018 only
-#          STATION == 210)
-
-
 #### format data ####
-buoy2018 <- buoy2018  %>%
+buoy2018_L0 <- buoy2018_L0  %>%
   rename(Hr.Min = 'Hr/Min',
          DOLowTempC = 'DOLoTempC',
          AveWindSp = 'WindSpdAv',
@@ -59,71 +28,28 @@ buoy2018 <- buoy2018  %>%
          datetime = as.POSIXct(paste(date, time, sep=' '), format='%Y-%m-%d %H:%M', tz='UTC')) %>%  #tibble forces to UTC, so coerce for our uses.
   select(-hour, -minutes, -Hr.Min, -Year, -Day, -time, -ArrayID) #remove unnecessary columns
 
-
-# # format time in LMP data
-# LMP2018 <- LMP2018 %>% 
-#   mutate(datetime = as.POSIXct(paste(DATE, '12:00', sep=' '), format='%Y-%m-%d %H:%M', tz='UTC')) %>%  #tibble forces to UTC, so coerce for our uses. assume noon, because no time available
-#   select(-c(TIME)) #remove unnecessary columns
-# 
-# str(buoy2018)
-# str(LMP2018)
-# 
-# 
-# #subset LMP for truthing data
-# LMP2018_temp <- LMP2018 %>% 
-#   select(datetime, DEPTH, TEMP) %>% 
-#   filter(DEPTH<=12) %>% 
-#   rename(depth = 'DEPTH', 
-#          value = 'TEMP') %>% 
-#   mutate(source = 'LMP')
-# 
-# LMP2018_upDO <- LMP2018 %>% 
-#   select(datetime, DEPTH, DO, PCNTSAT) %>% 
-#   filter(DEPTH <= 2) %>% 
-#   rename(depth = 'DEPTH', 
-#          DOppm = 'DO', 
-#          DOSat = 'PCNTSAT') %>% 
-#   gather(variable, value, -datetime, -depth) %>% 
-#   mutate(source = 'LMP')
-# 
-# LMP2018_lowDO <- LMP2018 %>% 
-#   select(datetime, DEPTH, DO, PCNTSAT) %>% 
-#   filter(DEPTH > 9 & DEPTH <12) %>% 
-#   rename(depth = 'DEPTH', 
-#          DOLowPPM = 'DO', 
-#          DOLowSat = 'PCNTSAT') %>% 
-#   gather(variable, value, -datetime, -depth) %>% 
-#   mutate(source = 'LMP')
-# 
-# LMP2018_chla <- LMP2018_bio %>%  
-#   select(DATE, CHL) %>% 
-#   mutate(DATE = as.POSIXct(paste(DATE, '12:00', sep = ' '), tz='UTC')) %>% 
-#   rename(Chlor_UGL = 'CHL',
-#          datetime = 'DATE') %>% 
-#   gather(variable, value, -datetime) %>% 
-#   mutate(source = 'LMP')
-# 
-# LMP2018_cond <- LMP2018_chem %>%  
-#   select(DATE, Depth, COND) %>% 
-#   mutate(DATE = as.POSIXct(paste(DATE, '12:00', sep = ' '), tz='UTC')) %>% 
-#   rename(SpecCond = 'COND',
-#          datetime = 'DATE',
-#          depth = 'Depth') %>% 
-#   gather(variable, value, -datetime) %>% 
-#   mutate(source = 'LMP')
-
 # add in all date time options in L1 data set
 alltimes_2018 <- as.data.frame(seq.POSIXt(as.POSIXct('2018-01-01 00:00', tz='UTC'), as.POSIXct('2018-12-31 23:50', tz='UTC'), '10 min')) %>% 
   rename("datetime" = !!names(.[1]))
 
-buoy2018_L1 <- buoy2018 %>% 
+buoy2018_L1 <- buoy2018_L0 %>% 
   right_join(., alltimes_2018) %>% 
   arrange(datetime)
 
-buoy2018_L1 <- buoy2018_L1[!duplicated(buoy2018_L1$datetime),]
+#double check to make sure there are no DST issues
+datelength2018 <- buoy2018_L1 %>% 
+  mutate(date = format(datetime, '%Y-%m-%d')) %>% 
+  group_by(date) %>% 
+  summarize(length(datetime))
+max(datelength2018$`length(datetime)`)
+min(datelength2018$`length(datetime)`)
+#should only be 144 or less if partial days included
+
+#clean up workspace
+rm(alltimes_2018, datelength2018)
 
 
-####THERMISTERS####
+####THERMISTORS####
 buoy2018_therm_vert <- buoy2018_L1 %>% 
   select(datetime, alltemp2011) %>%
   gather(variable, value, -datetime)
@@ -143,17 +69,12 @@ buoy2018_therm_vert <- buoy2018_L1 %>%
   select(datetime, alltemp2011) %>%
   gather(variable, value, -datetime)
 
-# ggplot(buoy2018_therm_vert_L1,
-#        aes(x=datetime, y=value, color=variable)) +
-#   geom_point() +
-#   scale_x_datetime(date_minor_breaks = '1 month') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
-#                               "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
-#   final_theme 
-
-buoy2018_therm_vert <- buoy2018_L1 %>% 
-  select(datetime, alltemp2011) %>%
-  gather(variable, value, -datetime)
+ggplot(buoy2018_therm_vert, aes(x=datetime, y=value, color = variable)) +
+  geom_point() +
+  scale_x_datetime(date_minor_breaks = '1 month') +
+    scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
+                                "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
+    final_theme
 
 # ggplot(subset(buoy2018_therm_vert,
 #               subset=(datetime >= as.POSIXct('2018-05-01', tz='UTC') & datetime < as.POSIXct('2018-06-01', tz='UTC'))),
@@ -274,7 +195,20 @@ buoy2018_therm_vert_L1 <- buoy2018_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 month') +
 #   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
 #                               "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
-#   final_theme 
+#   final_theme
+
+#correct colnames for offset of sensors from surface
+buoy2018_L1 <- buoy2018_L1 %>% 
+  rename(TempC_9p85m = 'TempC_9m',
+         TempC_8p85m = 'TempC_8m',
+         TempC_7p85m = 'TempC_7m',
+         TempC_6p85m = 'TempC_6m',
+         TempC_5p85m = 'TempC_5m',
+         TempC_4p85m = 'TempC_4m',
+         TempC_3p85m = 'TempC_3m',
+         TempC_2p85m = 'TempC_2m',
+         TempC_1p85m = 'TempC_1m',
+         TempC_0p85m = 'TempC_0m')
 
 rm(buoy2018_therm_vert, buoy2018_therm_vert_L1)
 
@@ -306,11 +240,11 @@ buoy2018_do_vert_L1 <- buoy2018_L1 %>%
   select(datetime, upDO, lowDO) %>%
   gather(variable, value, -datetime)
 
-# ggplot(buoy2018_do_vert, aes(x=datetime, y=value)) +
-#   geom_point() +
-#   facet_grid(variable ~ ., scales = 'free_y') +
-#   scale_x_datetime(date_minor_breaks = '1 month') +
-#   final_theme
+ggplot(buoy2018_do_vert_L1, aes(x=datetime, y=value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 month') +
+  final_theme
 
 
 # ggplot(subset(buoy2018_do_vert_L1,
@@ -481,8 +415,8 @@ buoy2018_do_vert_L1 <- buoy2018_L1 %>%
 #   final_theme +
 #   scale_color_colorblind()
 # 
-# buoy_temp_check <- buoy2018_L1 %>% 
-#   select(datetime, DOLowTempC, TempC_9m) %>% 
+# buoy_temp_check <- buoy2018_L1 %>%
+#   select(datetime, DOLowTempC, TempC_9p85m) %>%
 #   gather(variable, value, -datetime)
 # 
 # ggplot(buoy_temp_check,
@@ -491,76 +425,15 @@ buoy2018_do_vert_L1 <- buoy2018_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 month') +
 #   final_theme +
 #   scale_color_colorblind()
-
+# 
 rm(buoy2018_do_vert, buoy2018_do_vert_L1, buoy_temp_check)
-
-
-#### HOBO DO ####
-hobo_updo <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L0/2018_Summer_U26_DO.csv',
-         skip = 2,
-         col_types = c('icnnccccc'),
-         col_names = c('x', 'datetime', 'do_mgl', 'temp_degC', 'x2', 'x3', 'x4', 'x5', 'x6')) %>% 
-  select(datetime, do_mgl, temp_degC) %>% 
-  mutate(datetime = as.POSIXct(datetime, tz='UTC', format = '%m/%d/%y %I:%M:%S %p'))
-
-hobo_updo_vert <- hobo_updo %>% 
-  gather(variable, value, -datetime)
-
-# ggplot(hobo_updo_vert,
-#        aes(x=datetime, y=value)) +
-#   geom_point() +
-#   facet_grid(variable ~ ., scales = 'free_y') +
-#   scale_x_datetime(date_minor_breaks = '1 month') +
-#   labs(title = 'do 2018') +
-#   final_theme +
-#   scale_color_colorblind()
-# 
-# ggplot(subset(hobo_updo_vert,
-#               (subset = datetime >= as.POSIXct('2018-10-01', tz='UTC'))),
-#        aes(x=datetime, y=value)) +
-#   geom_point() +
-#   facet_grid(variable ~ ., scales = 'free_y') +
-#   scale_x_datetime(date_minor_breaks = '1 day') +
-#   labs(title = 'do 2018') +
-#   final_theme +
-#   scale_color_colorblind()
-# 
-# #sensor removed oct 12
-# ggplot(subset(hobo_updo_vert,
-#               (subset = datetime >= as.POSIXct('2018-10-12', tz='UTC'))),
-#        aes(x=datetime, y=value)) +
-#   geom_point() +
-#   facet_grid(variable ~ ., scales = 'free_y') +
-#   scale_x_datetime(date_minor_breaks = '1 hour') +
-#   labs(title = 'do 2018') +
-#   final_theme +
-#   scale_color_colorblind()
-
-hobo_updo_L1 <- hobo_updo %>% 
-  mutate_at(vars(do_mgl, temp_degC),
-            funs(case_when(datetime >= as.POSIXct('2018-10-12 10:30', tz='UTC') ~ NA_real_,
-                           TRUE ~ .))) %>% 
-  mutate(upDO_flag = case_when(datetime == as.POSIXct('2018-05-23 12:00:00', tz='UTC') ~ 'c',
-                                         TRUE ~ NA_character_))
-
-hobo_updo_vert_L1 <- hobo_updo_L1 %>% 
-  gather(variable, value, -datetime)
-
-# ggplot(hobo_updo_vert_L1,
-#        aes(x=datetime, y=value)) +
-#   geom_point() +
-#   facet_grid(variable ~ ., scales = 'free_y') +
-#   scale_x_datetime(date_minor_breaks = '1 month') +
-#   labs(title = 'do 2018') +
-#   final_theme +
-#   scale_color_colorblind()
 
 
 ####CHLA####
 # buoy2018_chla_vert <- buoy2018_L1 %>%
 #   select(datetime, chla) %>%
 #   gather(variable, value, -datetime)
-# 
+#
 # ggplot(buoy2018_chla_vert, aes(x=datetime, y=value)) +
 #   geom_point() +
 #   facet_grid(variable ~ ., scales = 'free_y') +
@@ -568,7 +441,7 @@ hobo_updo_vert_L1 <- hobo_updo_L1 %>%
 #   final_theme
 
 #chla sensor not working
-buoy2018_L1 <- buoy2018_L1 %>% 
+buoy2018_L1 <- buoy2018_L1 %>%
   mutate(Chlor_RFU = is.na(Chlor_RFU),
          Chlor_UGL = is.na(Chlor_UGL),
          SpecCond = is.na(SpecCond))
@@ -624,8 +497,8 @@ buoy_wind_vert <- buoy2018_L1 %>%
 
 buoy2018_L1 <- buoy2018_L1 %>% 
   mutate_at(vars(AveWindDir, AveWindSp, MaxWindDir, MaxWindSp),
-            funs(case_when(datetime >= as.POSIXct('2018-01-17 13:40', tz='UTC') & datetime < as.POSIXct('2018-01-18 14:30', tz='UTC') ~ NA_real_,
-                           datetime >= as.POSIXct('2018-01-23 6:10', tz='UTC') & datetime < as.POSIXct('2018-01-23 17:50', tz='UTC') ~ NA_real_,
+            funs(case_when(datetime >= as.POSIXct('2018-01-17 13:40', tz='UTC') & datetime < as.POSIXct('2018-01-18 14:30', tz='UTC') & MaxWindSp == 0 ~ NA_real_,
+                           datetime >= as.POSIXct('2018-01-23 6:10', tz='UTC') & datetime < as.POSIXct('2018-01-23 17:50', tz='UTC')& MaxWindSp == 0 ~ NA_real_,
                            TRUE ~ .)))
 
 buoy_wind_vert_L1 <- buoy2018_L1 %>% 
@@ -675,8 +548,8 @@ buoy_wind_vert_L1 <- buoy2018_L1 %>%
 
 buoy2018_L1 <- buoy2018_L1 %>% 
   mutate_at(vars(AveWindDir, AveWindSp, MaxWindDir, MaxWindSp),
-            funs(case_when(datetime >= as.POSIXct('2018-02-02 4:30', tz='UTC') & datetime < as.POSIXct('2018-02-02 12:50', tz='UTC') ~ NA_real_,
-                           datetime >= as.POSIXct('2018-02-18 4:30', tz='UTC') & datetime < as.POSIXct('2018-02-18 10:30', tz='UTC') ~ NA_real_,
+            funs(case_when(datetime >= as.POSIXct('2018-02-02 4:30', tz='UTC') & datetime < as.POSIXct('2018-02-02 12:50', tz='UTC')  & MaxWindSp == 0  ~ NA_real_,
+                           datetime >= as.POSIXct('2018-02-18 4:30', tz='UTC') & datetime < as.POSIXct('2018-02-18 10:30', tz='UTC') & MaxWindSp == 0  ~ NA_real_,
                            TRUE ~ .)))
 
 buoy_wind_vert_L1 <- buoy2018_L1 %>% 
@@ -737,8 +610,8 @@ buoy_wind_vert_L1 <- buoy2018_L1 %>%
 
 buoy2018_L1 <- buoy2018_L1 %>% 
   mutate_at(vars(AveWindDir, AveWindSp, MaxWindDir, MaxWindSp),
-            funs(case_when(datetime >= as.POSIXct('2018-03-08 5:00', tz='UTC') & datetime < as.POSIXct('2018-03-10 14:30', tz='UTC') ~ NA_real_,
-                           datetime >= as.POSIXct('2018-03-13 21:20', tz='UTC') & datetime < as.POSIXct('2018-03-14 14:20', tz='UTC') ~ NA_real_,
+            funs(case_when(datetime >= as.POSIXct('2018-03-08 5:00', tz='UTC') & datetime < as.POSIXct('2018-03-10 14:30', tz='UTC')  & MaxWindSp == 0 ~ NA_real_,
+                           datetime >= as.POSIXct('2018-03-13 21:20', tz='UTC') & datetime < as.POSIXct('2018-03-14 14:20', tz='UTC')  & MaxWindSp == 0 ~ NA_real_,
                            TRUE ~ .)))
 
 buoy_wind_vert_L1 <- buoy2018_L1 %>% 
@@ -754,7 +627,7 @@ buoy_wind_vert_L1 <- buoy2018_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 day') +
 #   final_theme +
 #   scale_color_colorblind()
-# 
+#
 # 
 # ggplot(subset(buoy_wind_vert_L1,
 #               subset=(datetime >= as.POSIXct('2018-04-01', tz='UTC') & datetime < as.POSIXct('2018-05-01', tz='UTC'))),
@@ -902,16 +775,18 @@ rm(buoy_wind_vert, buoy_wind_vert_L1)
 
 #recode when in transit or offline
 buoy2018_L1 <- buoy2018_L1 %>% 
+  mutate(PAR_flag = case_when(PAR < 0 ~ 'z',
+                              TRUE ~ NA_character_)) %>% 
   mutate(PAR = case_when(location == 'in transit' ~ NA_real_,
                          PAR < 0 ~ 0,
                          TRUE ~ PAR)) 
-# ggplot(buoy2018_L1,
-#        aes(x=datetime, y=PAR, color=location)) +
-#   geom_point() +
-#   labs(title = 'PAR 2018, NA recoded') +
-#   scale_x_datetime(date_minor_breaks = '1 month') +
-#   final_theme +
-#   scale_color_colorblind()
+ggplot(buoy2018_L1,
+       aes(x=datetime, y=PAR, color=location)) +
+  geom_point() +
+  labs(title = 'PAR 2018, NA recoded') +
+  scale_x_datetime(date_minor_breaks = '1 month') +
+  final_theme +
+  scale_color_colorblind()
 
 # ggplot(subset(buoy2018_L1,
 #               subset=(datetime >= as.POSIXct('2018-01-01', tz='UTC') & datetime < as.POSIXct('2018-02-01', tz='UTC'))),
@@ -1025,7 +900,7 @@ buoy2018_L1 <- buoy2018_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 month') +
 #   final_theme +
 #   scale_color_colorblind()
-
+# 
 # ggplot(subset(buoy2018_L1,
 #               subset=(datetime >= as.POSIXct('2018-01-01', tz='UTC') & datetime < as.POSIXct('2018-02-01', tz='UTC'))),
 #        aes(x=datetime, y=AirTempC, color=location)) +
@@ -1117,122 +992,36 @@ buoy2018_L1 <- buoy2018_L1 %>%
 #   scale_color_colorblind()
 
 
-
-
-#### look at two do sources ####
-lowdo2018 <- buoy2018_L1 %>%
-  select(datetime, lowDO)
-  
-do2018 <- full_join(lowdo2018, hobo_updo_L1) %>% 
-  gather(variable, value, -datetime)
-
-# ggplot(do2018,
-#        aes(x=datetime, y=value)) +
-#   geom_point() +
-#   facet_grid(variable ~ ., scales = 'free_y') +
-#   labs(title = 'do 2018') +
-#   scale_x_datetime(date_minor_breaks = '1 month') +
-#   final_theme +
-#   scale_color_colorblind()
-
-
 #### EXPORT L1 DATA STREAMS ####
 #export L1 tempstring file
-# buoy2018_L1 %>%
-#   select(datetime, TempC_0m, TempC_1m, TempC_2m, TempC_3m, TempC_4m, TempC_5m, TempC_6m, TempC_7m, TempC_8m, TempC_9m, temp_flag, location) %>%
-#   rename(TempC_9p85m = 'TempC_9m',
-#          TempC_8p85m = 'TempC_8m',
-#          TempC_7p85m = 'TempC_7m',
-#          TempC_6p85m = 'TempC_6m',
-#          TempC_5p85m = 'TempC_5m',
-#          TempC_4p85m = 'TempC_4m',
-#          TempC_3p85m = 'TempC_3m',
-#          TempC_2p85m = 'TempC_2m',
-#          TempC_1p85m = 'TempC_1m',
-#          TempC_0p85m = 'TempC_0m') %>%
-#   mutate(datetime = as.character(datetime)) %>%
-#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2018_tempstring_L1.csv')
-
-#crete vertical dataset
-buoy_2018_L1_vert <- buoy2018_L1 %>%
-  select(datetime, location, TempC_0m, TempC_1m, TempC_2m, TempC_3m, TempC_4m, TempC_5m, TempC_6m, TempC_7m, TempC_8m, TempC_9m) %>%
-  rename(TempC_9p85m = 'TempC_9m',
-         TempC_8p85m = 'TempC_8m',
-         TempC_7p85m = 'TempC_7m',
-         TempC_6p85m = 'TempC_6m',
-         TempC_5p85m = 'TempC_5m',
-         TempC_4p85m = 'TempC_4m',
-         TempC_3p85m = 'TempC_3m',
-         TempC_2p85m = 'TempC_2m',
-         TempC_1p85m = 'TempC_1m',
-         TempC_0p85m = 'TempC_0m') %>%
-  gather(depth_m, temp_degC, -datetime, -location) %>% 
-  mutate(depth_m = case_when(grepl(pattern = '_0p85m', x = depth_m) ~ '0.85',
-                             grepl(pattern = '_1p85m', x = depth_m) ~ '1.85',
-                             grepl(pattern = '_2p85m', x = depth_m) ~ '2.85',
-                             grepl(pattern = '_3p85m', x = depth_m) ~ '3.85',
-                             grepl(pattern = '_4p85m', x = depth_m) ~ '4.85',
-                             grepl(pattern = '_5p85m', x = depth_m) ~ '5.85',
-                             grepl(pattern = '_6p85m', x = depth_m) ~ '6.85',
-                             grepl(pattern = '_7p85m', x = depth_m) ~ '7.85',
-                             grepl(pattern = '_8p85m', x = depth_m) ~ '8.85',
-                             grepl(pattern = '_9p85m', x = depth_m) ~ '9.85',
-                             TRUE ~ NA_character_)) %>% 
-  mutate(depth_m = as.numeric(depth_m))
-
-
-# add flag for 0.85 reporting in 20min intervals
-buoy_2018_L1_vert <- buoy_2018_L1_vert %>% 
-  mutate(temp_flag = case_when(datetime >= as.POSIXct('2018-05-21 9:30', tz='UTC') & datetime < as.POSIXct('2018-10-19 10:30', tz='UTC') & depth_m == 0.85 & !is.na(temp_degC) ~ 'a',
-                               TRUE ~ NA_character_))
-
-
-#plot to check
-ggplot(buoy_2018_L1_vert, aes(x = datetime, y = temp_degC, color = as.factor(depth_m))) +
-  geom_point() +
-  scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-                              "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-
-
-#order by date, depth
-buoy_2018_L1_vert <- buoy_2018_L1_vert %>% 
-  arrange(datetime, depth_m)
-
-# buoy_2018_L1_vert %>%
-#   mutate(datetime = as.character(datetime)) %>%
-#   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2018_tempstring_vert_L1.csv')
-
+buoy2018_L1 %>%
+  select(datetime, TempC_0p85m:TempC_9p85m, temp_flag, location) %>%
+  mutate(datetime = as.character(datetime)) %>%
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/tempstring/te2018_tempstring_L1.csv')
 
 #export l1 do file
 buoy2018_L1 %>%
   select(datetime, lowDO, lowDO_flag, location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2018_do_L1.csv')
-
-#export l1 hobo do file
-hobo_updo_L1 %>%
-  mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2018_hobodo_L1.csv')
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/2018_do_L1.csv')
 
 #export l1 par file
 buoy2018_L1 %>%
-  select(datetime, PAR, location) %>%
+  select(datetime, PAR, PAR_flag, location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2018_PAR_L1.csv')
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2018_PAR_L1.csv')
 
 #export l1 wind
 buoy2018_L1 %>%
   select(datetime, AveWindSp, AveWindDir, MaxWindSp, MaxWindDir, location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2018_wind_L1.csv')
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2018_wind_L1.csv')
 
 #export l1 air temp file
 buoy2018_L1 %>%
   select(datetime, AirTempC, location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/2018_airtemp_L1.csv')
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2018_airtemp_L1.csv')
 
-
-rm(alltimes_2018)
 
 
