@@ -1,3 +1,5 @@
+source('library_func_lists.R')
+
 #### collate wind data ####
 wind_07 <-  read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2007_wind_L1.csv',
                      col_types = 'Tcnnc') 
@@ -126,6 +128,18 @@ wind_07e19 <- full_join(wind_07, wind_08) %>%
                            TRUE ~ .)))  %>%  # recode any offline or in transit data to NA for export
   select(-wind_dir_flag) #drop wind dir flag, as not needed any longer
 colnames(wind_07e19)
+
+#edit location for EML
+unique(wind_07e19$location)
+wind_07e19 <- wind_07e19 %>% 
+  mutate(location = case_when(location == 'harbor, water sensors offline' ~ 'harbor',
+                              TRUE ~ location))
+
+#edit flags for EML
+unique(wind_07e19$wind_flag)
+wind_07e19 <- wind_07e19 %>% 
+  mutate(wind_flag = case_when(is.na(wind_flag) ~ '',
+                               TRUE ~ wind_flag))
 
 #### export file ####
 wind_07e19 %>% 

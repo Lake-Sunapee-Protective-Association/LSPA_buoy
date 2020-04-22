@@ -1,3 +1,5 @@
+source('library_func_lists.R')
+
 #### read in all air temp files ####
 
 airtemp_07 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2007_AirTemp_L1.csv',
@@ -71,7 +73,6 @@ airtemp_e19 <- airtemp_e19 %>%
 colnames(airtemp_e19)
 
 
-
 #### collate files into one ####
 airtemp_07e19 <- full_join(airtemp_07, airtemp_08) %>% 
   full_join(., airtemp_09) %>% 
@@ -94,6 +95,19 @@ unique(airtemp_07e19$airtemp_flag)
 ggplot(airtemp_07e19, aes(x=datetime, y=AirTemp_degC, color = location)) +
   geom_point()+
   scale_color_colorblind()
+
+
+#edit location for EML
+unique(airtemp_07e19$location)
+airtemp_07e19 <- airtemp_07e19 %>% 
+  mutate(location = case_when(location == 'harbor, water sensors offline' ~ 'harbor',
+                              TRUE ~ location))
+
+#edit flags for EML
+unique(airtemp_07e19$airtemp_flag)
+airtemp_07e19 <- airtemp_07e19 %>% 
+  mutate(airtemp_flag = case_when(is.na(airtemp_flag) ~ '',
+                                  TRUE ~ airtemp_flag))
 
 
 #### export file ####

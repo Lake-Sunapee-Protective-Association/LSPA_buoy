@@ -10,6 +10,8 @@
 #*          similar methods to CCC and DR                        *
 #*****************************************************************
 
+source('library_func_lists.R')
+
 #bring in  buoy raw data
 buoy2019_L0 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L0/2019 Buoy Data_thru_jun.csv',
                      col_types = 'iiiinnnnnnnnnnnnnnnnnnnnnnnnnnnnnn')
@@ -27,7 +29,9 @@ buoy2019_L0 <- buoy2019_L0  %>%
          time = paste(hour, minutes, sep=':')) %>% #break out time from Hr.Min, create time column
   mutate(date = as.Date(paste(Day, Year, sep = '-'), format='%j-%Y'), #create date in ymd format
          datetime = as.POSIXct(paste(date, time, sep=' '), format='%Y-%m-%d %H:%M', tz='UTC')) %>%  #tibble forces to UTC, so coerce for our uses.
-  select(-hour, -minutes, -Hr.Min, -Year, -Day, -time, -ArrayID) #remove unnecessary columns
+  select(-hour, -minutes, -Hr.Min, -Year, -Day, -time, -ArrayID) %>% #remove unnecessary columns
+  rownames_to_column(var ='rowid')
+
 
 # add in all date time options in L1 data set
 range(buoy2019_L0$datetime)
@@ -68,8 +72,37 @@ max(datelength2019$`length(datetime)`)
 min(datelength2019$`length(datetime)`)
 #should only be 144 or less if partial days included
 
+#DST observed fix beginning of record
+buoy2019_L1a <- buoy2019_L1 %>% 
+  filter(datetime < as.POSIXct('2019-03-10 23:00:00', tz='UTC'))
+
+buoy2019_L1b <- buoy2019_L1 %>% 
+  filter(datetime >= as.POSIXct('2019-03-11 00:00', tz='UTC')) %>% 
+  right_join(partalltimes_2019) %>% 
+  filter(datetime >= as.POSIXct('2019-03-11 00:00', tz='UTC') & datetime < as.POSIXct('2019-05-31 23:50', tz='UTC')) %>% 
+  arrange(datetime) %>% 
+  rownames_to_column(var = 'rowid2')  %>% 
+  select(-datetime)
+#add all dates/times to record
+partalltimes_2019b <- as.data.frame(seq.POSIXt(as.POSIXct('2019-03-10 23:00:00', tz='UTC'), as.POSIXct('2019-05-31 23:50', tz='UTC'), '10 min')) %>% 
+  rename("datetime" = !!names(.[1])) %>% 
+  rownames_to_column(var = 'rowid2')
+buoy2019_L1b <- full_join(buoy2019_L1b, partalltimes_2019b)
+
+buoy2019_L1 <- full_join(buoy2019_L1a, buoy2019_L1b) %>% 
+  select(-rowid, -rowid2)
+
+#double check to make sure there are no DST issues
+datelength2019 <- buoy2019_L1 %>% 
+  mutate(date = format(datetime, '%Y-%m-%d')) %>% 
+  group_by(date) %>% 
+  summarize(length(datetime))
+max(datelength2019$`length(datetime)`)
+min(datelength2019$`length(datetime)`)
+#should only be 144 or less if partial days included
+
 #clean up workspace
-rm(partalltimes_2019, partdatelength2019)
+rm(partalltimes_2019, partdatelength2019, partalltimes_2019b, buoy2019_L1a, buoy2019_L1b)
 
 
 ####THERMISTORS####
@@ -92,14 +125,14 @@ buoy2019_therm_vert <- buoy2019_L1 %>%
   select(datetime, alltemp2011) %>%
   gather(variable, value, -datetime)
 
-# ggplot(buoy2019_therm_vert,
-#        aes(x=datetime, y=value, color=variable)) +
-#   geom_point() +
-#   scale_x_datetime(date_minor_breaks = '1 month') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
-#                               "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
-#   final_theme
-# 
+ggplot(buoy2019_therm_vert,
+       aes(x=datetime, y=value, color=variable)) +
+  geom_point() +
+  scale_x_datetime(date_minor_breaks = '1 month') +
+  scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
+                              "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
+  final_theme
+
 # ggplot(subset(buoy2019_therm_vert,
 #               subset=(datetime >= as.POSIXct('2019-05-01', tz='UTC') & datetime < as.POSIXct('2019-06-01', tz='UTC'))),
 #        aes(x=datetime, y=value, color=variable)) +
@@ -131,9 +164,9 @@ buoy2019_therm_vert <- buoy2019_L1 %>%
 
 buoy2019_L1 <- buoy2019_L1 %>% 
   mutate_at(vars(alltemp2011),
-            funs(case_when(datetime < as.POSIXct('2019-05-23 10:30', tz='UTC') ~ NA_real_,
+            funs(case_when(datetime < as.POSIXct('2019-05-23 09:30', tz='UTC') ~ NA_real_,
                            TRUE ~ .))) %>% 
-  mutate(location = case_when(datetime >= as.POSIXct('2019-05-23 10:30', tz='UTC') ~ 'loon',
+  mutate(location = case_when(datetime >= as.POSIXct('2019-05-23 09:30', tz='UTC') ~ 'loon',
                               TRUE ~ NA_character_))
 buoy2019_therm_vert_L1 <- buoy2019_L1 %>% 
   select(datetime, alltemp2011, location) %>%
@@ -245,20 +278,20 @@ buoy2019_L1 <- buoy2019_L1 %>%
             funs(case_when(. == -6999 ~ NA_real_,
                            TRUE ~ .)))
 
-# buoy2019_do_vert_L1 <- buoy2019_L1 %>%
-#   select(datetime, upDO, lowDO) %>%
-#   gather(variable, value, -datetime)
-# 
-# ggplot(buoy2019_do_vert, aes(x=datetime, y=value)) +
-#   geom_point() +
-#   facet_grid(variable ~ ., scales = 'free_y') +
-#   scale_x_datetime(date_minor_breaks = '1 month') +
-#   final_theme
+buoy2019_do_vert_L1 <- buoy2019_L1 %>%
+  select(datetime, upDO, lowDO) %>%
+  gather(variable, value, -datetime)
+
+ggplot(buoy2019_do_vert, aes(x=datetime, y=value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 month') +
+  final_theme
 
 #buoy move 5-23
 buoy2019_L1 <- buoy2019_L1 %>% 
   mutate_at(vars(lowDO, upDO),
-            funs(case_when(datetime < as.POSIXct('2019-05-23 10:30', tz='UTC') ~ NA_real_,
+            funs(case_when(datetime < as.POSIXct('2019-05-23 9:30', tz='UTC') ~ NA_real_,
                            TRUE ~ .)))
 
 buoy2019_do_vert_L1 <- buoy2019_L1 %>% 
@@ -291,13 +324,13 @@ buoy2019_do_vert_L1 <- buoy2019_L1 %>%
 #doesn't settle until 11
 buoy2019_L1 <- buoy2019_L1 %>% 
   mutate_at(vars(lowDO, upDO),
-            funs(case_when(datetime < as.POSIXct('2019-05-23 11:00', tz='UTC') ~ NA_real_,
+            funs(case_when(datetime < as.POSIXct('2019-05-23 10:00', tz='UTC') ~ NA_real_,
                            TRUE ~ .)))
 buoy2019_do_vert_L1 <- buoy2019_L1 %>% 
   select(datetime, lowDO, upDO) %>%
   gather(variable, value, -datetime)
 
-# 
+
 # ggplot(subset(buoy2019_do_vert_L1,
 #               subset=(datetime >= as.POSIXct('2019-06-01', tz='UTC') & datetime < as.POSIXct('2019-07-01', tz='UTC'))),
 #        aes(x=datetime, y=value)) +
@@ -508,8 +541,8 @@ buoy_wind_vert_L1 <- buoy2019_L1 %>%
 #   scale_color_colorblind()
 
 buoy2019_L1 <- buoy2019_L1 %>% 
-  mutate(location = case_when(datetime < as.POSIXct('2019-05-23 8:20', tz='UTC') ~ 'harbor',
-                              datetime >= as.POSIXct('2019-05-23 8:20', tz='UTC') & datetime < as.POSIXct('2019-05-23 10:30', tz='UTC') ~ 'in transit',
+  mutate(location = case_when(datetime < as.POSIXct('2019-05-23 7:20', tz='UTC') ~ 'harbor',
+                              datetime >= as.POSIXct('2019-05-23 7:20', tz='UTC') & datetime < as.POSIXct('2019-05-23 9:30', tz='UTC') ~ 'in transit',
                               TRUE ~ location)) %>% 
   mutate_at(vars(AveWindDir, AveWindSp, MaxWindDir, MaxWindSp),
             funs(case_when(location == 'in transit' ~ NA_real_,
@@ -586,11 +619,11 @@ buoy2019_L1 <- buoy2019_L1 %>%
 #par likely obscured jan 9-20, add flag
 buoy2019_L1 <- buoy2019_L1 %>% 
   mutate(PAR_flag = case_when(is.na(PAR_flag) ~ 'n',
-                              !is.na(PAR_flag) ~ paste('n', PAR_flag, sep = ', '),
-                              is.na(PAR_flag) & datetime >= as.POSIXct('2019-01-09', tz='UTC') &
-                                datetime < as.POSIXct('2019-01-20', tz='UTC') ~ 'n, o',
+                              !is.na(PAR_flag) ~ paste('n', PAR_flag, sep = ', ')),
+         PAR_flag = case_when(is.na(PAR_flag) & datetime >= as.POSIXct('2019-01-09', tz='UTC') &
+                                datetime < as.POSIXct('2019-01-20', tz='UTC') ~ 'o',
                               !is.na(PAR_flag) & datetime >= as.POSIXct('2019-01-09', tz='UTC') &
-                                datetime < as.POSIXct('2019-01-20', tz='UTC') ~ paste('n, o', PAR_flag, sep = ', '),
+                                datetime < as.POSIXct('2019-01-20', tz='UTC') ~ paste('o', PAR_flag, sep = ', '),
                               TRUE ~ PAR_flag))
 unique(buoy2019_L1$PAR_flag)
 
@@ -725,30 +758,35 @@ colnames(buoy2019_L1)
 #export L1 tempstring file
 buoy2019_L1 %>%
   select(datetime, TempC_0p75m:TempC_9p75m, location) %>%
+  filter(datetime < as.POSIXct('2019-05-23', tz='UTC')) %>% 
   mutate(datetime = as.character(datetime)) %>%
   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/tempstring/2019_tempstring_L1_corrdepths.csv')
 
 #export l1 do file
 buoy2019_L1 %>%
   select(datetime, upDO, lowDO, location) %>%
+  filter(datetime < as.POSIXct('2019-05-23', tz='UTC')) %>% 
   mutate(datetime = as.character(datetime)) %>%
   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/2019_do_L1.csv')
 
 #export l1 par file
 buoy2019_L1 %>%
   select(datetime, PAR, PAR_flag, location) %>%
+  filter(datetime < as.POSIXct('2019-05-23', tz='UTC')) %>% 
   mutate(datetime = as.character(datetime)) %>%
   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2019_PAR_L1.csv')
 
 #export l1 wind
 buoy2019_L1 %>%
   select(datetime, AveWindSp, AveWindDir, MaxWindSp, MaxWindDir, location) %>%
+  filter(datetime < as.POSIXct('2019-05-23', tz='UTC')) %>% 
   mutate(datetime = as.character(datetime)) %>%
   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2019_wind_L1.csv')
 
 #export l1 air temp file
 buoy2019_L1 %>%
   select(datetime, AirTempC, location) %>%
+  filter(datetime < as.POSIXct('2019-05-23', tz='UTC')) %>% 
   mutate(datetime = as.character(datetime)) %>%
   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2019_airtemp_L1.csv')
 

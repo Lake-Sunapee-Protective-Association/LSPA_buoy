@@ -12,6 +12,8 @@
 #*                   'Sunapee_buoy_2014-2016_07Aug2017.R'        *
 #*****************************************************************
 
+source('library_func_lists.R')
+
 #bring in summer 2015 hobo raw data
 hobo2015 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L0/2015 Summer Hobo.csv',
                       col_types = 'icnnnnnnnnnnnnnnnnnn')
@@ -22,7 +24,7 @@ hobo2015 <- hobo2015 %>%
   rename(Date.Time = 'Date/Time') %>% 
   mutate(datetime = as.POSIXct(Date.Time, format='%m/%d/%Y %H:%M', tz='UTC')) %>% 
   select(-Date.Time)
-
+head(hobo2015)
 
 #### hobo line ####
 hobo_vert <- hobo2015 %>%
@@ -50,55 +52,7 @@ ggplot(subset(hobo_vert, subset=(datetime>='2015-01-01' & datetime < '2016-01-01
 #                               "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
 #   final_theme
 
-
-
-# #reality check with LMP
-# hobo_LMP_2015 <- hobo_vert %>%
-#   mutate(source='hobo') %>%
-#   full_join(., LMP2015_temp)
-# unique(LMP2015_temp$datetime)
-# 
-# #June 22, July 20, Aug 10, Sept 21
-# ggplot(subset(hobo_LMP_2015,
-#               subset=(datetime>=as.POSIXct('2015-06-22', tz='UTC') &
-#                         datetime<as.POSIXct('2015-06-23', tz='UTC'))),
-#        aes(x=datetime, y=value, color=as.factor(variable), shape = source)) +
-#   geom_point() +
-#   final_theme +
-#   scale_x_datetime(date_minor_breaks = '1 hour') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-# 
-# ggplot(subset(hobo_LMP_2015,
-#               subset=(datetime>=as.POSIXct('2015-07-20', tz='UTC') &
-#                         datetime<as.POSIXct('2015-07-21', tz='UTC'))),
-#        aes(x=datetime, y=value, color=as.factor(variable), shape = source)) +
-#   geom_point() +
-#   final_theme +
-#   scale_x_datetime(date_minor_breaks = '1 hour') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-# 
-# ggplot(subset(hobo_LMP_2015,
-#               subset=(datetime>=as.POSIXct('2015-08-10', tz='UTC') &
-#                         datetime<as.POSIXct('2015-08-11', tz='UTC'))),
-#        aes(x=datetime, y=value, color=as.factor(variable), shape = source)) +
-#   geom_point() +
-#   final_theme +
-#   scale_x_datetime(date_minor_breaks = '1 hour') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-# 
-# ggplot(subset(hobo_LMP_2015,
-#               subset=(datetime>=as.POSIXct('2015-09-21', tz='UTC') &
-#                         datetime<as.POSIXct('2015-09-22', tz='UTC'))),
-#        aes(x=datetime, y=value, color=as.factor(variable), shape = source)) +
-#   geom_point() +
-#   final_theme +
-#   scale_x_datetime(date_minor_breaks = '1 hour') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#587CE9", "#a5b8f3", "#004d13",
-#                               "#00e639", "#66ff8c", "#00664b", "#009E73", "#00e6a8", "#8d840c", "#d4c711", "#f5ee89", "#005180", "#0081cc", "#66c7ff")) #so you can adjust
-
+tail(hobo2015)
 
 #export L1 tempstring file
 hobo2015 %>%
@@ -117,7 +71,7 @@ hobo2015 %>%
   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/record collations/tempstring/2015_hobotempstring_L1.csv')
 
 #clean up workspace
-rm(hobo_vert, hobo_LMP_2015)
+rm(hobo_vert)
 
 
 

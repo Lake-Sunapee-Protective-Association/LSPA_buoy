@@ -10,8 +10,10 @@
 #*          similar methods to CCC and DR                        *
 #*****************************************************************
 
+source('library_func_lists.R')
+
 #bring in  buoy raw data
-buoy2018_L0 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L0/2018 Buoy Data - through Oct.csv',
+buoy2018_L0 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L0/2018 Buoy Data.csv',
                      col_types = 'iiiinnnnnnnnnnnnnnnnnnnnnnnnnnnnnn')
 
 #### format data ####
@@ -26,7 +28,8 @@ buoy2018_L0 <- buoy2018_L0  %>%
          time = paste(hour, minutes, sep=':')) %>% #break out time from Hr.Min, create time column
   mutate(date = as.Date(paste(Day, Year, sep = '-'), format='%j-%Y'), #create date in ymd format
          datetime = as.POSIXct(paste(date, time, sep=' '), format='%Y-%m-%d %H:%M', tz='UTC')) %>%  #tibble forces to UTC, so coerce for our uses.
-  select(-hour, -minutes, -Hr.Min, -Year, -Day, -time, -ArrayID) #remove unnecessary columns
+  select(-hour, -minutes, -Hr.Min, -Year, -Day, -time, -ArrayID) %>%  #remove unnecessary columns
+  rownames_to_column(var ='rowid')
 
 # add in all date time options in L1 data set
 alltimes_2018 <- as.data.frame(seq.POSIXt(as.POSIXct('2018-01-01 00:00', tz='UTC'), as.POSIXct('2018-12-31 23:50', tz='UTC'), '10 min')) %>% 
@@ -45,8 +48,52 @@ max(datelength2018$`length(datetime)`)
 min(datelength2018$`length(datetime)`)
 #should only be 144 or less if partial days included
 
+#dst observed
+buoy2018_L1a <- buoy2018_L1 %>% 
+  filter(datetime < as.POSIXct('2018-03-11 23:00:00', tz='UTC'))
+
+buoy2018_L1b <- buoy2018_L1 %>% 
+  filter(datetime >= as.POSIXct('2018-03-12 00:00', tz='UTC') & rowid < 44335) %>% 
+  right_join(alltimes_2018) %>% 
+  filter(datetime >= as.POSIXct('2018-03-12 00:00', tz='UTC') & datetime < as.POSIXct('2018-11-05 1:00', tz='UTC')) %>% 
+  arrange(datetime) %>% 
+  rownames_to_column(var = 'rowid2')  %>% 
+  select(-datetime)
+#add all dates/times to record
+alltimes_2018b <- as.data.frame(seq.POSIXt(as.POSIXct('2018-03-11 23:00:00', tz='UTC'), as.POSIXct('2018-11-04 23:50', tz='UTC'), '10 min')) %>% 
+  rename("datetime" = !!names(.[1])) %>% 
+  rownames_to_column(var = 'rowid2')
+buoy2018_L1b <- full_join(buoy2018_L1b, alltimes_2018b)
+
+#2018-11-16
+buoy2018_L1c <- buoy2018_L1 %>% 
+  filter(rowid >= 44335)  %>% 
+  right_join(alltimes_2018) %>% 
+  filter(datetime >= as.POSIXct('2018-11-05 00:00', tz='UTC')) %>% 
+  arrange(datetime) %>% 
+  rownames_to_column(var = 'rowid2')  %>% 
+  select(-datetime)
+#add all dates/times to record
+alltimes_2018c <- as.data.frame(seq.POSIXt(as.POSIXct('2018-11-05 00:00', tz='UTC'), as.POSIXct('2018-12-31 23:50', tz='UTC'), '10 min')) %>% 
+  rename("datetime" = !!names(.[1])) %>% 
+  rownames_to_column(var = 'rowid2')
+buoy2018_L1c <- full_join(buoy2018_L1c, alltimes_2018c)
+
+buoy2018_L1 <- full_join(buoy2018_L1a, buoy2018_L1b) %>% 
+  full_join(., buoy2018_L1c) %>% 
+  select(-rowid, -rowid2)
+
+#double check to make sure there are no DST issues
+datelength2018 <- buoy2018_L1 %>% 
+  mutate(date = format(datetime, '%Y-%m-%d')) %>% 
+  group_by(date) %>% 
+  summarize(length(datetime))
+max(datelength2018$`length(datetime)`)
+min(datelength2018$`length(datetime)`)
+#should only be 144 or less if partial days included
+
 #clean up workspace
-rm(alltimes_2018, datelength2018)
+rm(alltimes_2018, datelength2018, alltimes_2018b, alltimes_2018c, buoy2018_L1a, buoy2018_L1b, buoy2018_L1c)
 
 
 ####THERMISTORS####
@@ -97,7 +144,7 @@ ggplot(buoy2018_therm_vert, aes(x=datetime, y=value, color = variable)) +
 
 buoy2018_L1 <- buoy2018_L1 %>% 
   mutate_at(vars(alltemp2011),
-            funs(case_when(datetime < as.POSIXct('2018-05-21 9:30', tz='UTC') ~ NA_real_,
+            funs(case_when(datetime < as.POSIXct('2018-05-21 8:30', tz='UTC') ~ NA_real_,
                            TRUE ~ .))) 
 buoy2018_therm_vert_L1 <- buoy2018_L1 %>% 
   select(datetime, alltemp2011) %>%
@@ -179,9 +226,9 @@ buoy2018_therm_vert_L1 <- buoy2018_L1 %>%
 
 buoy2018_L1 <- buoy2018_L1 %>% 
   mutate_at(vars(alltemp2011),
-            funs(case_when(datetime >= as.POSIXct('2018-10-19 10:30', tz='UTC') ~ NA_real_,
+            funs(case_when(datetime >= as.POSIXct('2018-10-19 9:30', tz='UTC') ~ NA_real_,
                            TRUE ~ .))) %>% 
-  mutate(temp_flag = case_when(datetime >= as.POSIXct('2018-05-21 9:30', tz='UTC') & datetime < as.POSIXct('2018-10-19 10:30', tz='UTC') ~ '0.85a',
+  mutate(temp_flag = case_when(datetime >= as.POSIXct('2018-05-21 8:30', tz='UTC') & datetime < as.POSIXct('2018-10-19 9:30', tz='UTC') ~ '0.85a',
                           TRUE ~ NA_character_))
 
 buoy2018_therm_vert_L1 <- buoy2018_L1 %>% 
@@ -266,11 +313,11 @@ ggplot(buoy2018_do_vert_L1, aes(x=datetime, y=value)) +
 #buoy move 5-21
 buoy2018_L1 <- buoy2018_L1 %>% 
   mutate_at(vars(lowDO),
-            funs(case_when(datetime < as.POSIXct('2018-05-21 10:00', tz='UTC') ~ NA_real_,
+            funs(case_when(datetime < as.POSIXct('2018-05-21 09:00', tz='UTC') ~ NA_real_,
                            TRUE ~ .))) %>% 
-  mutate(location = case_when(datetime >= as.POSIXct('2018-05-21 9:30', tz='UTC') ~ 'loon',
+  mutate(location = case_when(datetime >= as.POSIXct('2018-05-21 8:30', tz='UTC') ~ 'loon',
                               TRUE ~ NA_character_)) %>% 
-  mutate(lowDO_flag = case_when(datetime == as.POSIXct('2018-05-21 9:30', tz='UTC') ~ 'c',
+  mutate(lowDO_flag = case_when(datetime >= as.POSIXct('2018-05-21 8:30', tz='UTC') ~ 'xh',
                                 TRUE ~ NA_character_))
 
 buoy2018_do_vert_L1 <- buoy2018_L1 %>% 
@@ -312,11 +359,13 @@ buoy2018_do_vert_L1 <- buoy2018_L1 %>%
 #   final_theme
 
 buoy2018_L1 <- buoy2018_L1 %>% 
-  mutate(DOLowTempC = case_when(datetime == as.POSIXct('2018-06-20 8:10', tz='UTC') ~ NA_real_,
-                                datetime == as.POSIXct('2018-06-26 8:50', tz='UTC') ~ NA_real_,
+  mutate(DOLowTempC = case_when(datetime == as.POSIXct('2018-06-20 7:10', tz='UTC') ~ NA_real_,
+                                datetime == as.POSIXct('2018-06-26 7:50', tz='UTC') ~ NA_real_,
                                 TRUE ~ DOLowTempC)) %>% 
+  mutate(lowDO_flag =case_when(datetime >= as.POSIXct('2018-06-20 7:10', tz='UTC') & datetime < as.POSIXct('2018-06-26 8:30', tz='UTC') ~ paste('re', lowDO_flag, sep = ', '),
+                                TRUE ~ lowDO_flag)) %>% 
   mutate_at(vars(DOLowPPM, DOLowSat),
-            funs(case_when(datetime >= as.POSIXct('2018-06-20 8:10', tz='UTC') & datetime < as.POSIXct('2018-06-26 9:30', tz='UTC') ~ NA_real_,
+            funs(case_when(datetime >= as.POSIXct('2018-06-20 7:10', tz='UTC') & datetime < as.POSIXct('2018-06-26 8:30', tz='UTC') ~ NA_real_,
                            TRUE ~ .)))
 buoy2018_do_vert_L1 <- buoy2018_L1 %>% 
   select(datetime, lowDO) %>%
@@ -365,7 +414,7 @@ buoy2018_do_vert_L1 <- buoy2018_L1 %>%
 
 buoy2018_L1 <- buoy2018_L1 %>% 
   mutate_at(vars(lowDO),
-            funs(case_when(datetime == as.POSIXct('2018-09-10 19:20', tz='UTC') ~ NA_real_,
+            funs(case_when(datetime == as.POSIXct('2018-09-10 18:20', tz='UTC') ~ NA_real_,
                            TRUE ~ .)))
 buoy2018_do_vert_L1 <- buoy2018_L1 %>% 
   select(datetime, lowDO) %>%
@@ -399,34 +448,25 @@ buoy2018_do_vert_L1 <- buoy2018_L1 %>%
 
 buoy2018_L1 <- buoy2018_L1 %>% 
   mutate_at(vars(lowDO),
-            funs(case_when(datetime >= as.POSIXct('2018-10-19 10:30', tz='UTC') ~ NA_real_,
-                           TRUE ~ .)))
+            funs(case_when(datetime >= as.POSIXct('2018-10-19 9:30', tz='UTC') ~ NA_real_,
+                           TRUE ~ .))) %>% 
+  mutate(lowDO_flag = case_when(datetime >= as.POSIXct('2018-10-19 9:30', tz='UTC') ~ NA_character_,
+                                TRUE ~ lowDO_flag))
 
 buoy2018_do_vert_L1 <- buoy2018_L1 %>%
   select(datetime, lowDO) %>%
   gather(variable, value, -datetime)
 
-# ggplot(buoy2018_do_vert_L1,
-#        aes(x=datetime, y=value)) +
-#   geom_point() +
-#   facet_grid(variable ~ ., scales = 'free_y') +
-#   scale_x_datetime(date_minor_breaks = '1 month') +
-#   labs(title = 'do 2018, clean') +
-#   final_theme +
-#   scale_color_colorblind()
-# 
-# buoy_temp_check <- buoy2018_L1 %>%
-#   select(datetime, DOLowTempC, TempC_9p85m) %>%
-#   gather(variable, value, -datetime)
-# 
-# ggplot(buoy_temp_check,
-#        aes(x=datetime, y=value, color = variable)) +
-#   geom_point() +
-#   scale_x_datetime(date_minor_breaks = '1 month') +
-#   final_theme +
-#   scale_color_colorblind()
-# 
-rm(buoy2018_do_vert, buoy2018_do_vert_L1, buoy_temp_check)
+ggplot(buoy2018_do_vert_L1,
+       aes(x=datetime, y=value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 month') +
+  labs(title = 'do 2018, clean') +
+  final_theme +
+  scale_color_colorblind()
+
+rm(buoy2018_do_vert, buoy2018_do_vert_L1)
 
 
 ####CHLA####
@@ -611,7 +651,7 @@ buoy_wind_vert_L1 <- buoy2018_L1 %>%
 buoy2018_L1 <- buoy2018_L1 %>% 
   mutate_at(vars(AveWindDir, AveWindSp, MaxWindDir, MaxWindSp),
             funs(case_when(datetime >= as.POSIXct('2018-03-08 5:00', tz='UTC') & datetime < as.POSIXct('2018-03-10 14:30', tz='UTC')  & MaxWindSp == 0 ~ NA_real_,
-                           datetime >= as.POSIXct('2018-03-13 21:20', tz='UTC') & datetime < as.POSIXct('2018-03-14 14:20', tz='UTC')  & MaxWindSp == 0 ~ NA_real_,
+                           datetime >= as.POSIXct('2018-03-13 20:20', tz='UTC') & datetime < as.POSIXct('2018-03-14 13:20', tz='UTC')  & MaxWindSp == 0 ~ NA_real_,
                            TRUE ~ .)))
 
 buoy_wind_vert_L1 <- buoy2018_L1 %>% 
@@ -661,8 +701,8 @@ buoy_wind_vert_L1 <- buoy2018_L1 %>%
 #   scale_color_colorblind()
 
 buoy2018_L1 <- buoy2018_L1 %>% 
-  mutate(location = case_when(datetime < as.POSIXct('2018-05-21 8:40', tz='UTC') ~ 'harbor',
-                              datetime >= as.POSIXct('2018-05-21 8:40', tz='UTC') & datetime < as.POSIXct('2018-05-21 9:30', tz='UTC') ~ 'in transit',
+  mutate(location = case_when(datetime < as.POSIXct('2018-05-21 7:40', tz='UTC') ~ 'harbor',
+                              datetime >= as.POSIXct('2018-05-21 7:40', tz='UTC') & datetime < as.POSIXct('2018-05-21 8:30', tz='UTC') ~ 'in transit',
                               TRUE ~ location)) %>% 
   mutate_at(vars(AveWindDir, AveWindSp, MaxWindDir, MaxWindSp),
             funs(case_when(location == 'in transit' ~ NA_real_,
@@ -742,12 +782,122 @@ buoy2018_L1 <- buoy2018_L1 %>%
 #   scale_color_colorblind()
 
 buoy2018_L1 <- buoy2018_L1 %>% 
-  mutate(location = case_when(datetime >= as.POSIXct('2018-10-19 10:30', tz='UTC') & datetime < as.POSIXct('2018-10-19 11:30', tz='UTC') ~ 'in transit',
-                              datetime >= as.POSIXct('2018-10-19 11:30', tz='UTC') ~ 'harbor',
+  mutate(location = case_when(datetime >= as.POSIXct('2018-10-19 9:30', tz='UTC') & datetime < as.POSIXct('2018-10-19 10:30', tz='UTC') ~ 'in transit',
+                              datetime >= as.POSIXct('2018-10-19 10:30', tz='UTC') ~ 'harbor',
                               TRUE ~ location)) %>% 
   mutate_at(vars(AveWindDir, AveWindSp, MaxWindDir, MaxWindSp),
             funs(case_when(location == 'in transit' ~ NA_real_,
                            TRUE ~ .)))
+
+# ggplot(subset(buoy_wind_vert_L1,
+#               subset=(datetime >= as.POSIXct('2018-11-01', tz='UTC') & datetime < as.POSIXct('2018-12-01', tz='UTC'))),
+#        aes(x=datetime, y=value)) +
+#   geom_point() +
+#   facet_grid(variable ~ ., scales = 'free_y') +
+#   labs(title = 'nov wind 2018') +
+#   scale_x_datetime(date_minor_breaks = '1 day') +
+#   final_theme +
+#   scale_color_colorblind()
+# 
+# #frozen sensors nov 20-22
+# ggplot(subset(buoy_wind_vert_L1,
+#               subset=(datetime >= as.POSIXct('2018-11-20', tz='UTC') & datetime < as.POSIXct('2018-11-21', tz='UTC'))),
+#        aes(x=datetime, y=value)) +
+#   geom_point() +
+#   facet_grid(variable ~ ., scales = 'free_y') +
+#   labs(title = 'nov wind 2018') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   final_theme +
+#   scale_color_colorblind()
+# ggplot(subset(buoy_wind_vert_L1,
+#               subset=(datetime >= as.POSIXct('2018-11-22', tz='UTC') & datetime < as.POSIXct('2018-11-23', tz='UTC'))),
+#        aes(x=datetime, y=value)) +
+#   geom_point() +
+#   facet_grid(variable ~ ., scales = 'free_y') +
+#   labs(title = 'nov wind 2018') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   final_theme +
+#   scale_color_colorblind()
+# 
+# #frozen sensors nov 26-28
+# ggplot(subset(buoy_wind_vert_L1,
+#               subset=(datetime >= as.POSIXct('2018-11-26', tz='UTC') & datetime < as.POSIXct('2018-11-27', tz='UTC'))),
+#        aes(x=datetime, y=value)) +
+#   geom_point() +
+#   facet_grid(variable ~ ., scales = 'free_y') +
+#   labs(title = 'nov wind 2018') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   final_theme +
+#   scale_color_colorblind()
+# ggplot(subset(buoy_wind_vert_L1,
+#               subset=(datetime >= as.POSIXct('2018-11-28', tz='UTC') & datetime < as.POSIXct('2018-11-29', tz='UTC'))),
+#        aes(x=datetime, y=value)) +
+#   geom_point() +
+#   facet_grid(variable ~ ., scales = 'free_y') +
+#   labs(title = 'nov wind 2018') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   final_theme +
+#   scale_color_colorblind()
+
+buoy2018_L1 <- buoy2018_L1 %>% 
+  mutate_at(vars(AveWindDir, AveWindSp, MaxWindDir, MaxWindSp),
+            funs(case_when(datetime >= as.POSIXct('2018-11-20 7:00', tz='UTC') & datetime < as.POSIXct('2018-11-22 9:50', tz='UTC')  & MaxWindSp == 0 ~ NA_real_,
+                           datetime >= as.POSIXct('2018-11-26 23:10', tz='UTC') & datetime < as.POSIXct('2018-11-28 13:00', tz='UTC')  & MaxWindSp == 0 ~ NA_real_,
+                           TRUE ~ .)))
+
+buoy_wind_vert_L1 <- buoy2018_L1 %>% 
+  select(datetime, AveWindDir, AveWindSp, MaxWindDir, MaxWindSp) %>% 
+  gather(variable, value, -datetime)
+
+# ggplot(subset(buoy_wind_vert_L1,
+#               subset=(datetime >= as.POSIXct('2018-11-01', tz='UTC') & datetime < as.POSIXct('2018-12-01', tz='UTC'))),
+#        aes(x=datetime, y=value)) +
+#   geom_point() +
+#   facet_grid(variable ~ ., scales = 'free_y') +
+#   labs(title = 'nov wind 2018') +
+#   scale_x_datetime(date_minor_breaks = '1 day') +
+#   final_theme +
+#   scale_color_colorblind()
+# 
+# ggplot(subset(buoy_wind_vert_L1,
+#               subset=(datetime >= as.POSIXct('2018-12-01', tz='UTC') & datetime < as.POSIXct('2019-01-01', tz='UTC'))),
+#        aes(x=datetime, y=value)) +
+#   geom_point() +
+#   facet_grid(variable ~ ., scales = 'free_y') +
+#   labs(title = 'dec wind 2018') +
+#   scale_x_datetime(date_minor_breaks = '1 day') +
+#   final_theme +
+#   scale_color_colorblind()
+# 
+# #sensor frozen dec 28-29
+# ggplot(subset(buoy_wind_vert_L1,
+#               subset=(datetime >= as.POSIXct('2018-12-28', tz='UTC') & datetime < as.POSIXct('2018-12-29', tz='UTC'))),
+#        aes(x=datetime, y=value)) +
+#   geom_point() +
+#   facet_grid(variable ~ ., scales = 'free_y') +
+#   labs(title = 'dec wind 2018') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   final_theme +
+#   scale_color_colorblind()
+# ggplot(subset(buoy_wind_vert_L1,
+#               subset=(datetime >= as.POSIXct('2018-12-29', tz='UTC') & datetime < as.POSIXct('2018-12-30', tz='UTC'))),
+#        aes(x=datetime, y=value)) +
+#   geom_point() +
+#   facet_grid(variable ~ ., scales = 'free_y') +
+#   labs(title = 'dec wind 2018') +
+#   scale_x_datetime(date_minor_breaks = '1 hour') +
+#   final_theme +
+#   scale_color_colorblind()
+
+buoy2018_L1 <- buoy2018_L1 %>% 
+  mutate_at(vars(AveWindDir, AveWindSp, MaxWindDir, MaxWindSp),
+            funs(case_when(datetime >= as.POSIXct('2018-12-28 13:00', tz='UTC') & datetime < as.POSIXct('2018-12-29 2:40', tz='UTC')  & MaxWindSp == 0 ~ NA_real_,
+                           TRUE ~ .)))
+
+buoy_wind_vert_L1 <- buoy2018_L1 %>% 
+  select(datetime, AveWindDir, AveWindSp, MaxWindDir, MaxWindSp) %>% 
+  gather(variable, value, -datetime)
+
 
 buoy_wind_vert_L1 <- buoy2018_L1 %>% 
   select(datetime, AveWindDir, AveWindSp, MaxWindDir, MaxWindSp, location) %>% 
@@ -832,7 +982,7 @@ ggplot(buoy2018_L1,
 #   scale_x_datetime(date_minor_breaks = '1 day') +
 #   final_theme +
 #   scale_color_colorblind()
-# 
+# # 
 # ggplot(subset(buoy2018_L1,
 #               subset=(datetime >= as.POSIXct('2018-06-01', tz='UTC') & datetime < as.POSIXct('2018-07-01', tz='UTC'))),
 #        aes(x=datetime, y=PAR, color=location)) +
@@ -877,16 +1027,50 @@ ggplot(buoy2018_L1,
 #   scale_x_datetime(date_minor_breaks = '1 day') +
 #   final_theme +
 #   scale_color_colorblind()
-
-
-#### Air temp ####
-# ggplot(buoy2018_L1,
-#        aes(x=datetime, y=AirTempC, color=location)) +
+# 
+# ggplot(subset(buoy2018_L1,
+#               subset=(datetime >= as.POSIXct('2018-11-01', tz='UTC') & datetime < as.POSIXct('2018-12-01', tz='UTC'))),
+#        aes(x=datetime, y=PAR, color=location)) +
 #   geom_point() +
-#   labs(title = 'air temp 2018, NA recoded') +
-#   scale_x_datetime(date_minor_breaks = '1 month') +
+#   labs(title = 'PAR 2018, NA recoded') +
+#   scale_x_datetime(date_minor_breaks = '1 day') +
 #   final_theme +
 #   scale_color_colorblind()
+# 
+# ggplot(subset(buoy2018_L1,
+#               subset=(datetime >= as.POSIXct('2018-12-01', tz='UTC') & datetime < as.POSIXct('2019-01-01', tz='UTC'))),
+#        aes(x=datetime, y=PAR, color=location)) +
+#   geom_point() +
+#   labs(title = 'PAR 2018, NA recoded') +
+#   scale_x_datetime(date_minor_breaks = '1 day') +
+#   final_theme +
+#   scale_color_colorblind()
+
+#add flag for nighttime PAR errors begininig Jul 23
+buoy2018_L1 <- buoy2018_L1 %>% 
+  mutate(PAR_flag = case_when(datetime >= as.POSIXct('2018-07-23', tz= 'UTC') & is.na(PAR_flag) ~ 'n',
+                              datetime >= as.POSIXct('2018-07-23', tz= 'UTC') & !is.na(PAR_flag) ~ paste('n', PAR_flag, sep = ', '),
+                              TRUE ~ PAR_flag))%>% 
+  mutate(PAR = case_when(location == 'in transit' ~ NA_real_,
+                         PAR < 0 ~ 0,
+                         TRUE ~ PAR)) 
+
+ggplot(buoy2018_L1,
+       aes(x=datetime, y=PAR, color=location)) +
+  geom_point() +
+  labs(title = 'PAR 2018, NA recoded') +
+  scale_x_datetime(date_minor_breaks = '1 month') +
+  final_theme +
+  scale_color_colorblind()
+
+#### Air temp ####
+ggplot(buoy2018_L1,
+       aes(x=datetime, y=AirTempC, color=location)) +
+  geom_point() +
+  labs(title = 'air temp 2018, NA recoded') +
+  scale_x_datetime(date_minor_breaks = '1 month') +
+  final_theme +
+  scale_color_colorblind()
 
 #recode when in transit or offline
 buoy2018_L1 <- buoy2018_L1 %>% 
@@ -990,6 +1174,24 @@ buoy2018_L1 <- buoy2018_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 day') +
 #   final_theme +
 #   scale_color_colorblind()
+# 
+# ggplot(subset(buoy2018_L1,
+#               subset=(datetime >= as.POSIXct('2018-11-01', tz='UTC') & datetime < as.POSIXct('2018-12-01', tz='UTC'))),
+#        aes(x=datetime, y=AirTempC, color=location)) +
+#   geom_point() +
+#   labs(title = 'air temp 2018, NA recoded') +
+#   scale_x_datetime(date_minor_breaks = '1 day') +
+#   final_theme +
+#   scale_color_colorblind()
+# 
+# ggplot(subset(buoy2018_L1,
+#               subset=(datetime >= as.POSIXct('2018-12-01', tz='UTC') & datetime < as.POSIXct('2019-01-01', tz='UTC'))),
+#        aes(x=datetime, y=AirTempC, color=location)) +
+#   geom_point() +
+#   labs(title = 'air temp 2018, NA recoded') +
+#   scale_x_datetime(date_minor_breaks = '1 day') +
+#   final_theme +
+#   scale_color_colorblind()
 
 
 #### EXPORT L1 DATA STREAMS ####
@@ -997,7 +1199,7 @@ buoy2018_L1 <- buoy2018_L1 %>%
 buoy2018_L1 %>%
   select(datetime, TempC_0p85m:TempC_9p85m, temp_flag, location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/tempstring/te2018_tempstring_L1.csv')
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/tempstring/2018_tempstring_L1.csv')
 
 #export l1 do file
 buoy2018_L1 %>%

@@ -1,3 +1,5 @@
+source('library_func_lists.R')
+
 #### collate PAR data ####
 par_07 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2007_PAR_L1.csv',
                    col_types = 'Tcnc')
@@ -95,6 +97,18 @@ ggplot(par_07e19, aes(x=datetime, y=PAR_umolm2s, color =location))+
   geom_point() +
   scale_color_colorblind()
   
+#edit location for EML
+unique(par_07e19$location)
+par_07e19 <- par_07e19 %>% 
+  mutate(location = case_when(location == 'harbor, water sensors offline' ~ 'harbor',
+                              TRUE ~ location))
+
+#edit flags for EML
+unique(par_07e19$PAR_flag)
+par_07e19 <- par_07e19 %>% 
+  mutate(PAR_flag = gsub(pattern = ', ', replacement = '; ', PAR_flag),
+         PAR_flag = case_when(is.na(PAR_flag) ~ '',
+                              TRUE ~ PAR_flag))
 
 #### export file ####
 par_07e19 %>% 
