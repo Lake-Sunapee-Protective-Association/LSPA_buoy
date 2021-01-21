@@ -67,6 +67,7 @@ hobo2015 %>%
          TempC_7p5m = 'TempC_8m',
          TempC_8p5m = 'TempC_9m') %>%
   mutate(datetime = as.character(datetime)) %>%
+  mutate(location = 'loon') %>% 
   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/tempstring/2015_hobotempstring_L1.csv') %>% 
   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/record collations/tempstring/2015_hobotempstring_L1.csv')
 

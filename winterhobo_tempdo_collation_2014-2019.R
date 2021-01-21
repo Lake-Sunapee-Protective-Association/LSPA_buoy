@@ -40,7 +40,8 @@ winter_tempdo_14_19 <- full_join(tempdo_1415, tempdo_1516) %>%
          TempC_7p5m,  
          TempC_8p5m,  
          TempC_9p5m,  
-         TempC_10p5m)
+         TempC_10p5m) %>% 
+  mutate(location = 'loon')
 
 
 winter_tempdo_14_19 %>% 

@@ -1,5 +1,7 @@
 # do collation
 
+source('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/programs/library_func_lists.R')
+
 # make sure the years are jan-dec
 do2007 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/2007_do_L1.csv',
                     col_types = 'Tcnnnc') %>% 
@@ -58,7 +60,8 @@ str(do2017)
 
 do2018 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/2018_do_L1.csv',
                    col_types = 'Tnnncc') %>% 
-  filter(datetime >= as.POSIXct('2018-01-01', tz='UTC') & datetime < as.POSIXct('2019-01-01', tz='UTC'))
+  filter(datetime >= as.POSIXct('2018-01-01', tz='UTC') & datetime < as.POSIXct('2019-01-01', tz='UTC')) %>% 
+  rename(lower_do_flag = lowDO_flag)
 str(do2018)
 
 doe2019 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/2019_do_L1.csv',
@@ -84,6 +87,25 @@ buoy_record_do <- full_join(do2007, do2008) %>%
                            location == 'offline' ~ NA_character_,
                            TRUE ~ .))) %>% 
   arrange(datetime) 
+unique(buoy_record_do$upper_do_flag)
+unique(buoy_record_do$lower_do_flag)
+
+#clean up flags for eml
+buoy_record_do <- buoy_record_do %>% 
+  mutate(upper_do_flag = gsub(pattern = ', ', replace = '', x = upper_do_flag),
+         lower_do_flag = gsub(pattern = ', ', replace = '', x = lower_do_flag), 
+         upper_do_flag = case_when(upper_do_flag == 'xi' ~ 'ix',
+                                   is.na(upper_do_flag) ~ '',
+                                   TRUE ~ upper_do_flag),
+         lower_do_flag = case_when(is.na(lower_do_flag) ~ '',
+                                   TRUE ~ lower_do_flag))
+unique(buoy_record_do$upper_do_flag)
+unique(buoy_record_do$lower_do_flag)
+
+#clean up location for eml
+buoy_record_do <- buoy_record_do %>% 
+  mutate(location = case_when(location == 'harbor, water sensors offline' ~ 'harbor', 
+                              TRUE ~ location))
 
 # buoy_record_updo_v <- buoy_record_do %>% 
 #   select(datetime, location, upper_do_flag, DOSat, DOppm, DOTempC) %>% 
@@ -105,4 +127,4 @@ buoy_record_do <- full_join(do2007, do2008) %>%
 
 buoy_record_do %>% 
   mutate(datetime = as.character(datetime)) %>% 
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/record collations/do/2007-e2019_do_L1.csv')
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/record collations/do/2007-e2019_do_L1_v22April2020.csv')

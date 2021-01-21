@@ -1,3 +1,5 @@
+source('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/programs/library_func_lists.R')
+
 #### HOBO DO ####
 hobo_updo <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L0/2018_Summer_U26_DO.csv',
                       skip = 2,
@@ -44,7 +46,7 @@ hobo_updo_L1 <- hobo_updo %>%
             funs(case_when(datetime >= as.POSIXct('2018-10-12 10:30', tz='UTC') ~ NA_real_,
                            TRUE ~ .))) %>% 
   mutate(hobodo_flag = case_when(datetime == as.POSIXct('2018-05-23 12:00:00', tz='UTC') ~ 'c',
-                               TRUE ~ NA_character_))
+                               TRUE ~ ''))
 
 hobo_updo_vert_L1 <- hobo_updo_L1 %>% 
   gather(variable, value, -datetime, -hobodo_flag)
@@ -61,5 +63,6 @@ hobo_updo_vert_L1 <- hobo_updo_L1 %>%
 #export l1 hobo do file
 hobo_updo_L1 %>%
   mutate(datetime = as.character(datetime)) %>%
+  mutate(location = 'loon') %>% 
   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/2018_hobodo_L1.csv') %>% 
   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/record collations/do/2018_hobodo_L1.csv')
