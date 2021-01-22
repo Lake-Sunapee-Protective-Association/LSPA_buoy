@@ -13,9 +13,8 @@
 source('library_func_lists.R')
 
 #bring in  buoy raw data
-buoy2019_L0 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L0/2019 Buoy Data_thru_jun.csv',
+buoy2019_L0 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L0/2019 Buoy Data.csv',
                      col_types = 'iiiinnnnnnnnnnnnnnnnnnnnnnnnnnnnnn')
-
 
 #### format data ####
 buoy2019_L0 <- buoy2019_L0  %>%
@@ -28,103 +27,88 @@ buoy2019_L0 <- buoy2019_L0  %>%
          minutes = Hr.Min%%100,
          time = paste(hour, minutes, sep=':')) %>% #break out time from Hr.Min, create time column
   mutate(date = as.Date(paste(Day, Year, sep = '-'), format='%j-%Y'), #create date in ymd format
-         datetime = as.POSIXct(paste(date, time, sep=' '), format='%Y-%m-%d %H:%M', tz='UTC')) %>%  #tibble forces to UTC, so coerce for our uses.
+         datetime = as.POSIXct(paste(date, time, sep=' '), format='%Y-%m-%d %H:%M', tz='UTC')) %>%  
   select(-hour, -minutes, -Hr.Min, -Year, -Day, -time, -ArrayID) %>% #remove unnecessary columns
   rownames_to_column(var ='rowid')
+head(buoy2019_L0)
 
+#look for DST artifacts at 2am
+buoy2019_L0[buoy2019_L0$date == '2019-03-10',]$datetime
+buoy2019_L0[buoy2019_L0$date == '2019-11-03',]$datetime
 
-# add in all date time options in L1 data set
-range(buoy2019_L0$datetime)
-# alltimes_2019 <- as.data.frame(seq.POSIXt(as.POSIXct('2019-01-01 00:00', tz='UTC'), as.POSIXct('2019-12-31 23:50', tz='UTC'), '10 min')) %>% 
-#   rename("datetime" = !!names(.[1]))
-# 
-# buoy2019_L1 <- buoy2019_L0 %>% 
-#   right_join(., alltimes_2019) %>% 
-#   arrange(datetime)
-# 
-# #double check to make sure there are no DST issues
-# datelength2019 <- buoy2019_L1 %>% 
-#   mutate(date = format(datetime, '%Y-%m-%d')) %>% 
-#   group_by(date) %>% 
-#   summarize(length(datetime))
-# max(datelength2019$`length(datetime)`)
-# min(datelength2019$`length(datetime)`)
-# #should only be 144 or less if partial days included
-# 
-# #clean up workspace
-# rm(alltimes_2019, datelength2019)
-
-# partial year only for weather and temp
-partalltimes_2019 <- as.data.frame(seq.POSIXt(as.POSIXct('2019-01-01 00:00', tz='UTC'), as.POSIXct('2019-05-31 23:50', tz='UTC'), '10 min')) %>%
-  rename("datetime" = !!names(.[1]))
-
-buoy2019_L1 <- buoy2019_L0 %>%
-  right_join(., partalltimes_2019) %>%
-  arrange(datetime) %>% 
-  filter(datetime < as.POSIXct('2019-06-01', tz='UTC'))
-
-#double check to make sure there are no DST issues
-partdatelength2019 <- buoy2019_L1 %>%
-  mutate(date = format(datetime, '%Y-%m-%d')) %>%
-  group_by(date) %>%
-  summarize(length(datetime))
-max(datelength2019$`length(datetime)`)
-min(datelength2019$`length(datetime)`)
-#should only be 144 or less if partial days included
-
-#DST observed fix beginning of record
-buoy2019_L1a <- buoy2019_L1 %>% 
-  filter(datetime < as.POSIXct('2019-03-10 23:00:00', tz='UTC'))
-
-buoy2019_L1b <- buoy2019_L1 %>% 
-  filter(datetime >= as.POSIXct('2019-03-11 00:00', tz='UTC')) %>% 
-  right_join(partalltimes_2019) %>% 
-  filter(datetime >= as.POSIXct('2019-03-11 00:00', tz='UTC') & datetime < as.POSIXct('2019-05-31 23:50', tz='UTC')) %>% 
-  arrange(datetime) %>% 
-  rownames_to_column(var = 'rowid2')  %>% 
-  select(-datetime)
-#add all dates/times to record
-partalltimes_2019b <- as.data.frame(seq.POSIXt(as.POSIXct('2019-03-10 23:00:00', tz='UTC'), as.POSIXct('2019-05-31 23:50', tz='UTC'), '10 min')) %>% 
-  rename("datetime" = !!names(.[1])) %>% 
-  rownames_to_column(var = 'rowid2')
-buoy2019_L1b <- full_join(buoy2019_L1b, partalltimes_2019b)
-
-buoy2019_L1 <- full_join(buoy2019_L1a, buoy2019_L1b) %>% 
-  select(-rowid, -rowid2)
-
-#double check to make sure there are no DST issues
-datelength2019 <- buoy2019_L1 %>% 
-  mutate(date = format(datetime, '%Y-%m-%d')) %>% 
+#double check total number of observations for each day (should only be 144 or less to confirm no DST)
+datetimetable <- buoy2019_L0 %>% 
   group_by(date) %>% 
-  summarize(length(datetime))
-max(datelength2019$`length(datetime)`)
-min(datelength2019$`length(datetime)`)
-#should only be 144 or less if partial days included
+  summarize(n = length(datetime))
+
+#looks like there are 6 fewer instances of datetime in 3/10 and 6 additional on 11/4
+buoy2019_L0[buoy2019_L0$date == '2019-03-10',]$datetime
+#data gap on 3/10 is actually at 23:00-00:00
+buoy2019_L0[buoy2019_L0$date == '2019-11-04',]$datetime
+#data repeat on 11/4 is at 00:00-01:00
+
+# does observe DST, but at the wrong times. pull out by rowid, force time change for middle section.
+buoy2019_L0 <- buoy2019_L0 %>% 
+  mutate(instrument_datetime = datetime) 
+beginning <- buoy2019_L0 %>% 
+  filter(datetime < as.POSIXct('2019-03-10 23:00', tz='UTC')) #in EST
+middle <- buoy2019_L0 %>% 
+  filter(datetime >= as.POSIXct('2019-03-10 23:00', tz='UTC') & rowid <44196) #in EDT
+end <- buoy2019_L0 %>% 
+  filter(rowid >= 44196) #in EST
+middle <- middle %>% 
+  mutate(datetime = instrument_datetime - hours(1)) #get rid of DST
+#rejoin all data
+buoy2019_L1 <- full_join(beginning, middle) %>% 
+  full_join(., end) %>% 
+  arrange(datetime)
+
+# add in all date time stamps in L1 data set
+alltimes_2019 <- as.data.frame(seq.POSIXt(as.POSIXct('2019-01-01 00:00', tz='UTC'), as.POSIXct('2019-12-31 23:50', tz='UTC'), '10 min')) %>%
+  rename("datetime" = !!names(.[1])) %>% 
+  rowid_to_column('index')
+buoy2019_L1 <- buoy2019_L1 %>%
+  right_join(., alltimes_2019) %>%
+  arrange(datetime)
+#add flag for missing data from buoy
+buoy2019_L1 <- buoy2019_L1 %>% 
+  mutate(buoyoffline = case_when(is.na(rowid) ~ 'T',
+                                 TRUE ~ 'F')) %>% 
+  select(-rowid, -index)
 
 #clean up workspace
-rm(partalltimes_2019, partdatelength2019, partalltimes_2019b, buoy2019_L1a, buoy2019_L1b)
+rm(alltimes_2019, beginning, middle, end, datetimetable)
 
 
 ####THERMISTORS####
 buoy2019_therm_vert <- buoy2019_L1 %>% 
-  select(datetime, alltemp2011) %>%
+  select(datetime, all_of(alltemp2011)) %>%
   gather(variable, value, -datetime)
 
-# ggplot(buoy2019_therm_vert, aes(x=datetime, y=value)) +
-#   geom_point() +
-#   facet_grid(variable ~ ., scales = 'free_y') +
-#   scale_x_datetime(date_minor_breaks = '1 month') +
-#   final_theme
+#plot to see
+ggplot(buoy2019_therm_vert, aes(x=datetime, y=value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 month') +
+  final_theme
 
+#recode NA strings of -6999
 buoy2019_L1 <- buoy2019_L1 %>% 
   mutate_at(vars(alltemp2011),
-            funs(case_when(. == -6999 ~ NA_real_,
-                           TRUE ~ .)))
-
+            ~case_when(. == -6999 ~ NA_real_,
+                           TRUE ~ .))
 buoy2019_therm_vert <- buoy2019_L1 %>% 
   select(datetime, alltemp2011) %>%
   gather(variable, value, -datetime)
 
+#plot again
+ggplot(buoy2019_therm_vert, aes(x=datetime, y=value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 month') +
+  final_theme
+
+#plot together to see relative values
 ggplot(buoy2019_therm_vert,
        aes(x=datetime, y=value, color=variable)) +
   geom_point() +
@@ -133,110 +117,122 @@ ggplot(buoy2019_therm_vert,
                               "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
   final_theme
 
-# ggplot(subset(buoy2019_therm_vert,
-#               subset=(datetime >= as.POSIXct('2019-05-01', tz='UTC') & datetime < as.POSIXct('2019-06-01', tz='UTC'))),
-#        aes(x=datetime, y=value, color=variable)) +
-#   geom_point() +
-#   scale_x_datetime(date_minor_breaks = '1 day') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
-#                               "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
-#   final_theme
-# 
-# #buoy deployment
-# ggplot(subset(buoy2019_therm_vert,
-#               subset=(datetime >= as.POSIXct('2019-05-23', tz='UTC') & datetime < as.POSIXct('2019-05-24', tz='UTC'))),
-#        aes(x=datetime, y=value, color=variable)) +
-#   geom_point() +
-#   scale_x_datetime(date_minor_breaks = '1 hour') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
-#                               "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
-#   final_theme
-# 
-# ggplot(subset(buoy2019_therm_vert,
-#               subset=(datetime >= as.POSIXct('2019-05-23', tz='UTC') & datetime < as.POSIXct('2019-05-24', tz='UTC'))),
-#        aes(x=datetime, y=value, color=variable)) +
-#   geom_point() +
-#   scale_x_datetime(date_minor_breaks = '1 hour') +
-#   scale_y_continuous(limits = c(5,20)) +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
-#                               "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
-#   final_theme
+#recode TempC_0 to NA_real_
+buoy2019_L1 <- buoy2019_L1 %>% 
+  mutate(TempC_0m = NA_real_)
+buoy2019_therm_vert <- buoy2019_L1 %>% 
+  select(datetime, alltemp2011) %>%
+  gather(variable, value, -datetime)
 
+#plot together to see relative values, without 0m
+ggplot(buoy2019_therm_vert,
+       aes(x=datetime, y=value, color=variable)) +
+  geom_point() +
+  scale_x_datetime(date_minor_breaks = '1 month') +
+  scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
+                              "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
+  final_theme
+
+#recode data prior to May 1 (predeployment testing)
 buoy2019_L1 <- buoy2019_L1 %>% 
   mutate_at(vars(alltemp2011),
-            funs(case_when(datetime < as.POSIXct('2019-05-23 09:30', tz='UTC') ~ NA_real_,
-                           TRUE ~ .))) %>% 
+            ~ case_when(datetime < as.POSIXct('2019-05-01', tz='UTC') ~ NA_real_,
+                        TRUE ~ .))
+buoy2019_therm_vert <- buoy2019_L1 %>% 
+  select(datetime, alltemp2011) %>%
+  gather(variable, value, -datetime)
+
+#plot together to see relative values, without pre-deployment blip
+ggplot(buoy2019_therm_vert,
+       aes(x=datetime, y=value, color=variable)) +
+  geom_point() +
+  scale_x_datetime(date_minor_breaks = '1 month') +
+  scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
+                              "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
+  final_theme
+
+# plot by 2-week period, save plot.
+#create a list of 2-week periods for for-loop
+#set time period of interest:
+start_date = '2019-05-15'
+end_date = '2019-11-15'
+
+#create a list of weeks during time period of interest
+weekly_2019 <- seq(as.Date(start_date), as.Date(end_date), 'week')  %>% 
+  as.data.frame(.) %>% 
+  dplyr::rename(date = '.') 
+
+for(i in 1:(nrow(weekly_2019)-1)) {
+  chunk <- buoy2019_L1 %>% 
+    filter(datetime >= as.POSIXct(weekly_2019$date[i], tz= 'UTC') &
+             datetime < as.POSIXct(weekly_2019$date[i+1], tz='UTC'))
+  chunk_vert <- chunk %>% 
+    select(datetime, all_of(alltemp2011)) %>%
+    gather(variable, value, -datetime)
+  ggplot(chunk_vert, aes(x = datetime, y = value, color = variable)) +
+    geom_point() +
+    scale_x_datetime(date_minor_breaks = '1 day') +
+    scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
+                                "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
+    final_theme +
+    labs(x = NULL,
+         y = 'water temperature (degrees C)',
+         title = paste0('LSPA thermistors ', weekly_2019$date[i], ' - ', weekly_2019$date[i+1]))
+  ggsave(filename = paste0('graphs/2019/L0_therm_weekly_', weekly_2019$date[i], '.jpg'), height = 6, width =8, units = 'in', dpi = 300)
+}
+
+#data look great - need to check deployment May 23 and removal, Nov 5
+
+#buoy deployment
+deployment = '2019-05-23'
+ggplot(subset(buoy2019_therm_vert,
+              subset=(datetime >= as.POSIXct(deployment, tz='UTC') & datetime < (as.POSIXct(deployment, tz='UTC') + days(1)))),
+       aes(x=datetime, y=value, color=variable)) +
+  geom_point() +
+  scale_x_datetime(date_minor_breaks = '1 hour') +
+  scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
+                              "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
+  final_theme
+
+#just add location information
+buoy2019_L1 <- buoy2019_L1 %>% 
   mutate(location = case_when(datetime >= as.POSIXct('2019-05-23 09:30', tz='UTC') ~ 'loon',
+                              datetime <as.POSIXct('2019-05-23 09:30', tz='UTC') & buoyoffline == 'F' ~ 'harbor',
                               TRUE ~ NA_character_))
 buoy2019_therm_vert_L1 <- buoy2019_L1 %>% 
   select(datetime, alltemp2011, location) %>%
   gather(variable, value, -datetime, -location)
 
-# ggplot(subset(buoy2019_therm_vert_L1,
-#               subset=(datetime >= as.POSIXct('2019-05-01', tz='UTC') & datetime < as.POSIXct('2019-06-01', tz='UTC'))),
-#        aes(x=datetime, y=value, color=variable)) +
-#   geom_point() +
-#   labs(title = 'May 2019 -thermistors') +
-#   scale_x_datetime(date_minor_breaks = '1 day') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
-#                               "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
-#   final_theme
+#buoy removal 
+removal = '2019-11-05'
+ggplot(subset(buoy2019_therm_vert,
+              subset=(datetime >= as.POSIXct(removal, tz='UTC') & datetime < (as.POSIXct(removal, tz='UTC') + days(1)))),
+       aes(x=datetime, y=value, color=variable)) +
+  geom_point() +
+  scale_x_datetime(date_minor_breaks = '1 hour') +
+  scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
+                              "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
+  final_theme
 
+#recode data after 10:30 (inclusive), update location to in-transit. loon will be added by do string
 buoy2019_L1 <- buoy2019_L1 %>% 
-  mutate(TempC_0m = case_when(datetime >= as.POSIXct('2019-05-01', tz='UTC') &
-                                datetime < as.POSIXct('2019-06-01', tz='UTC') &
-                                (TempC_0m>=20 | TempC_0m < 9.5) ~ NA_real_,
-                              TRUE ~ TempC_0m)) 
+  mutate_at(vars(alltemp2011),
+            ~ case_when(datetime >= as.POSIXct('2019-11-05 10:30', tz='UTC') ~ NA_real_,
+                        TRUE ~ .)) %>% 
+  mutate(location = case_when(datetime >= as.POSIXct('2019-11-05 10:30', tz='UTC') ~ 'in transit',
+                              TRUE ~ location))
 buoy2019_therm_vert_L1 <- buoy2019_L1 %>% 
   select(datetime, alltemp2011, location) %>%
   gather(variable, value, -datetime, -location)
 
-# ggplot(subset(buoy2019_therm_vert_L1,
-#               subset=(datetime >= as.POSIXct('2019-05-01', tz='UTC') & datetime < as.POSIXct('2019-06-01', tz='UTC'))),
-#        aes(x=datetime, y=value, color=variable)) +
-#   geom_point() +
-#   scale_x_datetime(date_minor_breaks = '1 day') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
-#                               "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
-#   final_theme
-# 
-# ggplot(subset(buoy2019_L1,
-#               subset=(datetime >= as.POSIXct('2019-05-23', tz='UTC') & datetime < as.POSIXct('2019-06-01', tz='UTC'))),
-#        aes(x=datetime, y=TempC_0m)) +
-#   labs(title = '0m only thermistor error') +
-#   geom_point() +
-#   scale_x_datetime(date_minor_breaks = '1 day') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
-#                               "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
-#   final_theme
-# 
-# 
-# ggplot(subset(buoy2019_therm_vert_L1,
-#               subset=(datetime >= as.POSIXct('2019-06-01', tz='UTC') & datetime < as.POSIXct('2019-07-01', tz='UTC'))),
-#        aes(x=datetime, y=value, color=variable)) +
-#   geom_point() +
-#   scale_x_datetime(date_minor_breaks = '1 day') +
-#   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
-#                               "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
-#   final_theme
-
-# buoy2019_L1 <- buoy2019_L1 %>% 
-#   mutate(TempC_0m = case_when(datetime >= as.POSIXct('2019-06-01', tz='UTC') &
-#                                 datetime < as.POSIXct('2019-07-01', tz='UTC') &
-#                                 (TempC_0m>=20 | TempC_0m < 9.5) ~ NA_real_,
-#                               TRUE ~ TempC_0m)) 
-# buoy2019_therm_vert_L1 <- buoy2019_L1 %>% 
-#   select(datetime, alltemp2011, location) %>%
-#   gather(variable, value, -datetime, -location)
-# 
-# # ggplot(subset(buoy2019_therm_vert_L1,
-# #               subset=(datetime >= as.POSIXct('2019-06-01', tz='UTC') & datetime < as.POSIXct('2019-07-01', tz='UTC'))),
-# #        aes(x=datetime, y=value, color=variable)) +
-# #   geom_point() +
-# #   scale_x_datetime(date_minor_breaks = '1 day') +
-# #   scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
-# #                               "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
-# #   final_theme
+ggplot(subset(buoy2019_therm_vert_L1,
+              subset=(datetime >= as.POSIXct(removal, tz='UTC') & datetime < (as.POSIXct(removal, tz='UTC') + days(1)))),
+       aes(x=datetime, y=value, color=variable)) +
+  geom_point() +
+  scale_x_datetime(date_minor_breaks = '1 hour') +
+  scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
+                              "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
+  final_theme
 
 ggplot(buoy2019_therm_vert_L1,
        aes(x=datetime, y=value, color=variable)) +
@@ -264,8 +260,8 @@ rm(buoy2019_therm_vert, buoy2019_therm_vert_L1)
 
 #### DO ####
 buoy2019_do_vert <- buoy2019_L1 %>% 
-  select(datetime, upDO, lowDO) %>%
-  gather(variable, value, -datetime)
+  select(datetime, all_of(upDO), all_of(lowDO), location) %>%
+  gather(variable, value, -datetime, -location)
 
 # ggplot(buoy2019_do_vert, aes(x=datetime, y=value)) +
 #   geom_point() +
@@ -273,22 +269,53 @@ buoy2019_do_vert <- buoy2019_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 month') +
 #   final_theme
 
+#recode NA values and data prior to buoy move to loon
 buoy2019_L1 <- buoy2019_L1 %>% 
   mutate_at(vars(upDO, lowDO),
             funs(case_when(. == -6999 ~ NA_real_,
-                           TRUE ~ .)))
+                           location == 'harbor' ~ NA_real_,
+                           location == 'in transit' ~ NA_real_,
+                           TRUE ~ .))) 
 
 buoy2019_do_vert_L1 <- buoy2019_L1 %>%
   select(datetime, upDO, lowDO) %>%
   gather(variable, value, -datetime)
 
-ggplot(buoy2019_do_vert, aes(x=datetime, y=value)) +
+ggplot(buoy2019_do_vert_L1, aes(x=datetime, y=value)) +
   geom_point() +
   facet_grid(variable ~ ., scales = 'free_y') +
   scale_x_datetime(date_minor_breaks = '1 month') +
   final_theme
 
-#buoy move 5-23
+#look at the DO data on a monthly basis
+for(i in 1:(nrow(weekly_2019)-1)) {
+  chunk <- buoy2019_L1 %>% 
+    filter(datetime >= as.POSIXct(weekly_2019$date[i], tz= 'UTC') &
+             datetime < as.POSIXct(weekly_2019$date[i+1], tz='UTC'))
+  chunk_vert <- chunk %>% 
+    select(datetime, upDO, lowDO) %>%
+    gather(variable, value, -datetime)
+  ggplot(chunk_vert, aes(x = datetime, y = value)) +
+    geom_point() +
+    facet_grid(variable ~ ., scales = 'free_y') +
+    scale_x_datetime(date_minor_breaks = '1 day') +
+    scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
+                                "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
+    final_theme +
+    labs(x = NULL,
+         y = NULL,
+         title = paste0('LSPA DO sensors ', weekly_2019$date[i], ' - ', weekly_2019$date[i+1]))
+  ggsave(filename = paste0('graphs/2019/L0_do_weekly_', weekly_2019$date[i], '.jpg'), height = 6, width =8, units = 'in', dpi = 300)
+}
+
+# Jun17
+#Jul13
+#Jul24pm
+#aug 15
+#aug19
+#sep24
+#oct11
+
 buoy2019_L1 <- buoy2019_L1 %>% 
   mutate_at(vars(lowDO, upDO),
             funs(case_when(datetime < as.POSIXct('2019-05-23 9:30', tz='UTC') ~ NA_real_,
