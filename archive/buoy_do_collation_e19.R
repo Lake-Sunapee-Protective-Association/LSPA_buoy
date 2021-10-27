@@ -64,10 +64,15 @@ do2018 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/d
   rename(lower_do_flag = lowDO_flag)
 str(do2018)
 
-doe2019 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/2019_do_L1.csv',
+do2019 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/2019_do_L1.csv',
                    col_types = 'Tnnnnnnc') %>% 
-  filter(datetime >= as.POSIXct('2019-01-01', tz='UTC') & datetime < as.POSIXct('2019-06-01', tz='UTC'))
-str(doe2019)
+  filter(datetime >= as.POSIXct('2019-01-01', tz='UTC') & datetime < as.POSIXct('2020-01-01', tz='UTC'))
+str(do2019)
+
+do2020 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/2020_do_L1.csv',
+                   col_types = 'Tnnnnnnc') %>% 
+  filter(datetime >= as.POSIXct('2020-01-01', tz='UTC') & datetime < as.POSIXct('2020-01-01', tz='UTC'))
+str(do2020)
 
 ####collate buoy temp data together ####
 buoy_record_do <- full_join(do2007, do2008) %>% 
@@ -81,8 +86,9 @@ buoy_record_do <- full_join(do2007, do2008) %>%
   full_join(., do2016) %>% 
   full_join(., do2017) %>% 
   full_join(., do2018) %>% 
-  full_join(., doe2019) %>% 
-  mutate_at(vars(upper_do_flag, lower_do_flag),
+  full_join(., do2019) %>% 
+  full_join(., do2020) %>% 
+  mutate_at(vars(upper_do_flag, lower_do_flag), #clear flags where 
             funs(case_when(location == 'in transit' ~ NA_character_,
                            location == 'offline' ~ NA_character_,
                            TRUE ~ .))) %>% 

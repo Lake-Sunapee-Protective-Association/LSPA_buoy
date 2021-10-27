@@ -64,18 +64,25 @@ par_18 <- par_18 %>%
   rename(PAR_umolm2s = PAR)
 colnames(par_18)
 
-par_e19 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2019_PAR_L1.csv',
+par_19 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2019_PAR_L1.csv',
                    col_types = 'Tncc')
-colnames(par_e19)
-par_e19 <- par_e19 %>% 
+colnames(par_19)
+par_19 <- par_19 %>% 
   rename(PAR_umolm2s = PAR)
-colnames(par_e19)
+colnames(par_19)
+
+par_20 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2020_PAR_L1.csv',
+                   col_types = 'Tncc')
+colnames(par_20)
+par_20 <- par_20 %>% 
+  rename(PAR_umolm2s = PAR)
+colnames(par_20)
 
 
 
 
 #### collate into one file ####
-par_07e19 <- full_join(par_07, par_08) %>% 
+par_0720 <- full_join(par_07, par_08) %>% 
   full_join(., par_09) %>% 
   full_join(., par_10) %>% 
   full_join(., par_11) %>% 
@@ -86,33 +93,33 @@ par_07e19 <- full_join(par_07, par_08) %>%
   full_join(., par_16) %>% 
   full_join(., par_17) %>% 
   full_join(., par_18) %>% 
-  full_join(., par_e19) %>% 
+  full_join(., par_19) %>% 
   mutate(PAR_umolm2s = case_when(location == 'in transit' ~ NA_real_,
                                  location == 'offline' ~ NA_real_,
                                  TRUE ~ PAR_umolm2s)) 
-colnames(par_07e19)
-unique(par_07e19$PAR_flag)
+colnames(par_0720)
+unique(par_0720$PAR_flag)
 
-ggplot(par_07e19, aes(x=datetime, y=PAR_umolm2s, color =location))+
+ggplot(par_0720, aes(x=datetime, y=PAR_umolm2s, color =location))+
   geom_point() +
   scale_color_colorblind()
   
 #edit location for EML
-unique(par_07e19$location)
-par_07e19 <- par_07e19 %>% 
+unique(par_0720$location)
+par_0720 <- par_0720 %>% 
   mutate(location = case_when(location == 'harbor, water sensors offline' ~ 'harbor',
                               TRUE ~ location))
 
 #edit flags for EML
-unique(par_07e19$PAR_flag)
-par_07e19 <- par_07e19 %>% 
+unique(par_0720$PAR_flag)
+par_0720 <- par_0720 %>% 
   mutate(PAR_flag = gsub(pattern = ', ', replacement = '; ', PAR_flag),
          PAR_flag = case_when(is.na(PAR_flag) ~ '',
                               TRUE ~ PAR_flag))
 
 #### export file ####
-par_07e19 %>% 
+par_0720 %>% 
   mutate(datetime = as.character(datetime)) %>% 
-  write_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/record collations/met/2007-e2019_PAR_L1.csv')
+  write_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/record collations/met/2007-2020_PAR_L1.csv')
 
 

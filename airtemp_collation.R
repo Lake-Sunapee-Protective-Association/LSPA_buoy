@@ -65,16 +65,24 @@ airtemp_18 <- airtemp_18 %>%
   rename(AirTemp_degC = AirTempC)
 colnames(airtemp_18)
 
-airtemp_e19 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2019_airtemp_L1.csv',
+airtemp_19 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2019_airtemp_L1.csv',
                        col_types = 'Tnc')
-colnames(airtemp_e19)
-airtemp_e19 <- airtemp_e19 %>% 
+colnames(airtemp_19)
+airtemp_19 <- airtemp_19 %>% 
   rename(AirTemp_degC = AirTempC)
-colnames(airtemp_e19)
+colnames(airtemp_19)
+
+airtemp_20 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2020_airtemp_L1.csv',
+                        col_types = 'Tnc')
+colnames(airtemp_20)
+airtemp_20 <- airtemp_20 %>% 
+  rename(AirTemp_degC = AirTempC)
+colnames(airtemp_20)
+
 
 
 #### collate files into one ####
-airtemp_07e19 <- full_join(airtemp_07, airtemp_08) %>% 
+airtemp_0720 <- full_join(airtemp_07, airtemp_08) %>% 
   full_join(., airtemp_09) %>% 
   full_join(., airtemp_10) %>% 
   full_join(., airtemp_11) %>% 
@@ -85,32 +93,33 @@ airtemp_07e19 <- full_join(airtemp_07, airtemp_08) %>%
   full_join(., airtemp_16) %>% 
   full_join(., airtemp_17) %>% 
   full_join(., airtemp_18) %>% 
-  full_join(., airtemp_e19) %>% 
+  full_join(., airtemp_19) %>% 
+  full_join(., airtemp_20) %>% 
   mutate(AirTemp_degC = case_when(location == 'offline' ~ NA_real_,
                                   location == 'in transit' ~ NA_real_,
                                   TRUE ~ AirTemp_degC))
-colnames(airtemp_07e19)
-unique(airtemp_07e19$airtemp_flag)
+colnames(airtemp_0720)
+unique(airtemp_0720$airtemp_flag)
 
-ggplot(airtemp_07e19, aes(x=datetime, y=AirTemp_degC, color = location)) +
+ggplot(airtemp_0720, aes(x=datetime, y=AirTemp_degC, color = location)) +
   geom_point()+
   scale_color_colorblind()
 
 
 #edit location for EML
-unique(airtemp_07e19$location)
-airtemp_07e19 <- airtemp_07e19 %>% 
+unique(airtemp_0720$location)
+airtemp_0720 <- airtemp_0720 %>% 
   mutate(location = case_when(location == 'harbor, water sensors offline' ~ 'harbor',
                               TRUE ~ location))
 
 #edit flags for EML
-unique(airtemp_07e19$airtemp_flag)
-airtemp_07e19 <- airtemp_07e19 %>% 
+unique(airtemp_0720$airtemp_flag)
+airtemp_0720 <- airtemp_0720 %>% 
   mutate(airtemp_flag = case_when(is.na(airtemp_flag) ~ '',
                                   TRUE ~ airtemp_flag))
 
 
 #### export file ####
-airtemp_07e19 %>% 
+airtemp_0720 %>% 
   mutate(datetime = as.character(datetime)) %>% 
-  write_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/record collations/met/2007-e2019_airtemp_L1.csv')
+  write_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/record collations/met/2007-2020_airtemp_L1.csv')

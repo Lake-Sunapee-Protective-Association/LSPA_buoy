@@ -51,5 +51,6 @@ alltemp2019 <-   c('TempC_0p5m', 'TempC_0p85m',
                         'TempC_9p5m', 'TempC_9p85m', 
                         'TempC_10p5m', 'TempC_11p5m', 
                         'TempC_13p5m') 
+wind <- c('AveWindDir', 'AveWindSp', 'MaxWindDir', 'MaxWindSp')
   
 

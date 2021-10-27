@@ -317,7 +317,7 @@ buoy2018_L1 <- buoy2018_L1 %>%
                            TRUE ~ .))) %>% 
   mutate(location = case_when(datetime >= as.POSIXct('2018-05-21 8:30', tz='UTC') ~ 'loon',
                               TRUE ~ NA_character_)) %>% 
-  mutate(lowDO_flag = case_when(datetime >= as.POSIXct('2018-05-21 8:30', tz='UTC') ~ 'xh',
+  mutate(lowDO_flag = case_when(datetime == as.POSIXct('2018-05-21 9:00', tz='UTC') ~ 'cp',
                                 TRUE ~ NA_character_))
 
 buoy2018_do_vert_L1 <- buoy2018_L1 %>% 
