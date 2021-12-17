@@ -75,7 +75,9 @@ exoinfo <- c('EXO_date', 'EXO_time','EXO_pres_psia', 'EXO_depth_m', 'EXO_batt_V'
 cond <- c('Cond', 'SpecCond')
 exodo <- c('DOSat', 'DOppm')
 exoalgae <- c('Chlor_RFU', 'Chlor_UGL', 'BGAPC_RFU', 'BGAPC_UGL')
-eoxfdom <- c('fDOM_RFU', 'fDOM_QSU')
+exofdom <- c('fDOM_RFU', 'fDOM_QSU')
+exochla <- c('Chlor_RFU', 'Chlor_UGL')
+exobga <- c('BGAPC_RFU', 'BGAPC_UGL')
 
 air <-  c('AirTempC', 'RelHum')
 wind <- c('AveWindDir', 'AveWindSp', 'MaxWindDir', 'MaxWindSp')
