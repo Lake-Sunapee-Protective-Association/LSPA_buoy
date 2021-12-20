@@ -393,39 +393,35 @@ for(i in 1:length(months)) {
 
 
 # EXPORT L1 DATA STREAMS ----
-colnames(buoy2021_L1)
+colnames(buoy2021a_L1)
 
 #export L1 tempstring file
-buoy2021_L1 %>%
+buoy2021a_L1 %>%
   select(datetime, TempC_0p75m:TempC_9p75m, location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/tempstring/2021_tempstring_L1_corrdepths.csv')
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/tempstring/2021a_tempstring_L1_corrdepths.csv')
 
 #export l1 do file
-buoy2021_L1 %>%
-  select(datetime, all_of(upDO), all_of(lowDO), upper_do_flag, lower_do_flag, location) %>%
+buoy2021a_L1 %>%
+  select(datetime, all_of(upDO), all_of(lowDO), location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/2021_do_L1.csv')
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/2021a_do_L1.csv')
 
 #export l1 par file
-buoy2021_L1 %>%
-  select(datetime, PAR, PAR_flag, location) %>%
+buoy2021a_L1 %>%
+  select(datetime, PAR, flag_PAR, location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2021_PAR_L1.csv')
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2021a_PAR_L1.csv')
 
 #export l1 wind
-buoy2021_L1 %>%
-  select(datetime, all_of(wind), location) %>%
+buoy2021a_L1 %>%
+  select(datetime, all_of(wind), flag_wind, location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2021_wind_L1.csv')
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2021a_wind_L1.csv')
 
 #export l1 air temp file
-buoy2021_L1 %>%
-  select(datetime, AirTempC, location) %>%
+buoy2021a_L1 %>%
+  select(datetime, AirTempC, RelHum, location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2021_airtemp_L1.csv')
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2021a_airtemp_RH_L1.csv')
 
-test <- buoy2021b_wq_L1 %>% 
-  select(datetime, BGAPC_RFU) %>% 
-  mutate(exotest = ifelse(BGAPC_RFU < 0 & !is.na(BGAPC_RFU), 0, BGAPC_RFU)) 
-  
