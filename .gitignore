@@ -3,3 +3,7 @@
 .RData
 .Ruserdata
 graphs/*
+archive/*
+from DR/*
+primarybuoy/*
+sas/*
