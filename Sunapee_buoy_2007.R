@@ -627,6 +627,24 @@ buoy2007_L1 <- buoy2007_L1 %>%
   rename(airTemperature_degC = AirTempC)
 
 
+#### Relative Humidity ####
+range(buoy2007_L1$RH, na.rm = T)
+
+ggplot(buoy2007_L1, aes(x=datetime, y = RH)) +
+  geom_point() +
+  final_theme +
+  labs(title = '2007 air temp raw',
+       x= NULL,
+       y= 'air temp (deg C)') +
+  scale_x_datetime(date_minor_breaks = '1 month')
+
+#rh is wrong. recode and do not export
+
+#rename with CV
+buoy2007_L1 <- buoy2007_L1 %>% 
+  mutate(RH = NA_real_)
+
+
 #### EXPORT L1 FILES ####
 #export L1 tempstring file
 colnames(buoy2007_L1)
