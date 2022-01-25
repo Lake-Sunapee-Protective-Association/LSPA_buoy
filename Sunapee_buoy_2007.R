@@ -324,7 +324,7 @@ buoy2007_L1 <- buoy2007_L1 %>%
 
 #add flag for 11.5 and 13.5 as possibly in sediment
 buoy2007_L1 <- buoy2007_L1 %>% 
-  mutate(flag_tem = case_when(flag_temp11p5m == '' ~ 'b',
+  mutate(flag_temp11p5m = case_when(flag_temp11p5m == '' ~ 'b',
                                 flag_temp11p5m != '' ~ paste(flag_temp11p5m, 'b', sep = '; '),
                                 TRUE ~ flag_temp11p5m),
          flag_temp13p5m = case_when(flag_temp13p5m == '' ~ 'b',
