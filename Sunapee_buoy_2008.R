@@ -56,7 +56,6 @@ datelength2008 <- buoy2008_L1 %>%
 datelength2008[datelength2008$date == '2008-03-09',] # this is right now
 datelength2008[datelength2008$date == '2008-11-02',] # this has a gap, assume this is due to overwrite of dupe data
 
-#make sure all timestamps present and create L1 dataset
 #create dummy timestamp so there are no blanks
 range(buoy2008_L1$datetime)
 alltimes_2008 <- as.data.frame(seq.POSIXt(as.POSIXct('2008-01-01', tz = buoy_tz), as.POSIXct('2008-12-31 23:50', tz = buoy_tz), '10 min')) %>% 
@@ -1321,8 +1320,8 @@ buoy2008_L1 <- buoy2008_L1 %>%
 
 #rename with CV
 buoy2008_L1 <- buoy2008_L1 %>% 
-  rename(windDirection_deg = InstWindDir,
-         windSpeed_mps = InstWindSp)
+  rename(windDirectionInstantaneous_deg = InstWindDir,
+         windSpeedInstantaneous_mps = InstWindSp)
 
 rm(wind_vert, wind_vert_b)
 
@@ -1617,7 +1616,7 @@ buoy2008_L1 %>%
 # export met data
 buoy2008_L1 %>%
   select(datetime, location, 
-         windDirection_deg, windSpeed_mps, flag_winddir, 
+         windDirectionInstantaneous_deg, windSpeedInstantaneous_mps, flag_winddir, 
          radiationIncomingPAR_umolm2s, flag_par, 
          airTemperature_degC, flag_airtemp) %>%
   mutate(datetime = as.character(datetime)) %>%

@@ -538,8 +538,8 @@ buoy2007_L1 <- buoy2007_L1 %>%
 
 #rename with CV
 buoy2007_L1 <- buoy2007_L1 %>% 
-  rename(windDirection_deg = InstWindDir,
-         windSpeed_mps = InstWindSp)
+  rename(windDirectionInstantaneous_deg = InstWindDir,
+         windSpeedInstantaneous_mps = InstWindSp)
 
 rm(wind_vert, wind_vert_b)
 
@@ -666,7 +666,7 @@ buoy2007_L1 %>%
 # export met data
 buoy2007_L1 %>%
   select(datetime, location, 
-         windDirection_deg, windSpeed_mps, flag_winddir, 
+         windDirectionInstantaneous_deg, windSpeedInstantaneous_mps, flag_winddir, 
          radiationIncomingPAR_umolm2s, flag_par, 
          airTemperature_degC) %>%
   mutate(datetime = as.character(datetime)) %>%
