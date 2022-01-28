@@ -42,7 +42,6 @@ datelength2012[datelength2012$date == '2012-03-11',]
 datelength2012[datelength2012$date == '2012-11-04',]
 #all present
 
-
 #force into NYtz with dst; convert to utc-5
 buoy2012_L1 <- buoy2012_L0 %>% 
   mutate(datetime_instrument = force_tz(datetime, tz = 'America/New_York'),
