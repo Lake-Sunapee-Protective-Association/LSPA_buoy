@@ -3,11 +3,6 @@
 #*                                                               *
 #* TITLE:   Sunapee_buoy_2009.r                                  *
 #* AUTHOR:  Bethel Steele                                        *
-#* SYSTEM:  Lenovo ThinkCentre, Win 10, R 3.5.2, RStudio 1.1.383 *
-#* PROJECT: Lake Sunapee Buoy Data Cleaning                      *
-#* PURPOSE: subset data for met/compare with L1                  *
-#* LAST MODIFIED: 05Sept2019 to create vertical dataset for      *
-#*          master collation                                     *
 #*****************************************************************
 
 source('library_func_lists.R')

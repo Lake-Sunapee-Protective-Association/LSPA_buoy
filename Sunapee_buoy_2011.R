@@ -3,9 +3,6 @@
 #*                                                               *
 #* TITLE:   Sunapee_buoy_2011.r                                  *
 #* AUTHOR:  Bethel Steele                                        *
-#* SYSTEM:  Lenovo ThinkCentre, Win 10, R 3.4.2, RStudio 1.1.383 *
-#* PROJECT: Lake Sunapee Buoy Data Cleaning                      *
-#* PURPOSE: subset data for met/compare with L1                  *
 #*****************************************************************
 
 
