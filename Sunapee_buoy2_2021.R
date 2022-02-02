@@ -13,7 +13,7 @@
 source('library_func_lists.R')
 
 #point to directories
-data_dir = 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L0/'
+data_dir = 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L0/2021/'
 log_dir = 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/operation notes/'
 
 # store time zones
@@ -23,15 +23,14 @@ log_tz = 'America/New_York'
 
 # BRING IN RAW DATA ----
 
-
-## second part of year  (incomplete) ----
-buoy2021b_wq_L0 <- read.csv(file.path(data_dir, 'SUNP_buoy_wq_p2021.csv'),
+## second part of year ----
+buoy2021b_wq_L0 <- read.csv(file.path(data_dir, 'SUNP_buoy_wq.csv'),
                             col.names = buoy2021,
                             skip = 3,
                             na.strings = 'NAN')
 head(buoy2021b_wq_L0)
 
-buoy2021b_met_L0 <- read.csv(file.path(data_dir, 'SUNP_buoy_met_p2021.csv'),
+buoy2021b_met_L0 <- read.csv(file.path(data_dir, 'SUNP_buoy_met.csv'),
                              col.names = met2021,
                              skip = 3,
                              na.strings = 'NAN')
@@ -39,7 +38,7 @@ head(buoy2021b_met_L0)
 
 ## bring in log info ----
 
-logb <- read_xlsx(file.path(log_dir, 'SUNP_MaintenanceLog_p2021.xlsx'),
+logb <- read_xlsx(file.path(log_dir, 'SUNP_MaintenanceLog_2021.xlsx'),
                  sheet = 'MaintenanceLog')
 
 
@@ -49,9 +48,10 @@ logb <- read_xlsx(file.path(log_dir, 'SUNP_MaintenanceLog_p2021.xlsx'),
 
 ### wq ----
 buoy2021b_wq_L1 <- buoy2021b_wq_L0 %>% 
-  mutate(datetime = as.POSIXct(datetime, tz = buoyb_tz),
-         instrument_datetime = datetime,
-         date = as.Date(instrument_datetime)) %>% 
+  mutate(datetime = as.POSIXct(datetime),
+         datetime = force_tz(datetime, tz = buoyb_tz),
+         date = as.Date(datetime)) %>% 
+  filter(datetime < as.Date('2022-01-01')) %>% 
   rownames_to_column('rowid_wq') %>% 
   select(-index)
 
@@ -59,20 +59,27 @@ buoy2021b_wq_L1 <- buoy2021b_wq_L0 %>%
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
   select(-EXO_date, -EXO_time)
 
-#record does not extend to DST, so no need to check.
-# #double check total number of observations for each day (should only be 144 or less to confirm no DST)
-# datetimetable <- buoy2021b_wq_L0 %>% 
-#   group_by(date) %>% 
-#   summarize(n = length(datetime))
-# #looks good
-# #double check DST dates
-# buoy2021b_wq_L0[buoy2021b_wq_L0$date == '2021-11-07',]$datetime
+# record does not extend to DST, so no need to check.
+#double check total number of observations for each day (should only be 144 or less to confirm no DST)
+datetimetable <- buoy2021b_wq_L1 %>%
+  group_by(date) %>%
+  summarize(n = length(datetime))
+#looks good
+#double check DST dates
+buoy2021b_wq_L1[buoy2021b_wq_L1$date == as.Date('2021-11-07'),]$datetime
+#look at date with 145 records
+buoy2021b_wq_L1[buoy2021b_wq_L1$date == as.Date('2021-12-06'),]$datetime
+#duplicate is 2021-12-06 14:10:00, check record to see if identical
+dupedate <- buoy2021b_wq_L1[buoy2021b_wq_L1$date == as.Date('2021-12-06'),]
+buoy2021b_wq_L1 <- buoy2021b_wq_L1[buoy2021b_wq_L1$rowid_wq != 27532,] #remove the dupe row
+
 
 ### met ----
 buoy2021b_met_L1 <- buoy2021b_met_L0 %>% 
-  mutate(datetime = as.POSIXct(datetime, tz = buoyb_tz),
-         instrument_datetime = datetime,
-         date = as.Date(instrument_datetime)) %>% 
+  mutate(datetime = as.POSIXct(datetime),
+         datetime = force_tz(datetime, tz = buoyb_tz),
+         date = as.Date(datetime)) %>% 
+  filter(datetime < as.Date('2022-01-01')) %>% 
   rownames_to_column('rowid_met') %>% 
   select(-index)
 
@@ -107,6 +114,7 @@ logb <- logb %>%
                             (instrument == 'EXO' | instrument == 'do') ~ 'r', #sensor cap change flag
                           grepl('removed', notes, ignore.case = T) ~ 'R', #sensor removal
                           grepl('move', notes, ignore.case = T) ~ 'v',
+                          grepl('RH', notes, ignore.case = T) ~ 'r',
                           TRUE ~ 'o'))  # sensor out of water
 
 
@@ -116,7 +124,6 @@ ggplot(buoy2021b_wq_L1, aes(x = datetime, y = LoggerBatV)) +
   geom_point()
 ggplot(buoy2021b_wq_L1, aes(x = datetime, y = RadioBatV)) +
   geom_point()
-
 ggplot(buoy2021b_wq_L1, aes(x = datetime, y = EXO_batt_V)) +
   geom_point()
 
@@ -133,23 +140,23 @@ buoy2021b_wq_L1$flag_met = ''
 for(l in 1:nrow(logb)){
   if (logb$instrument[l] == 'EXO') {
   buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-    mutate(flag_exo = case_when(instrument_datetime >= logb$TIMESTAMP_start[l] &
-                                  instrument_datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l],
+    mutate(flag_exo = case_when(datetime >= logb$TIMESTAMP_start[l] &
+                                  datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l],
                                 TRUE ~ flag_exo))
   } else if (logb$instrument[l] == 'do' | logb$instrument[l] == 'DO') {
     buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-      mutate(flag_do = case_when(instrument_datetime >= logb$TIMESTAMP_start[l] &
-                                   instrument_datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l], 
+      mutate(flag_do = case_when(datetime >= logb$TIMESTAMP_start[l] &
+                                   datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l], 
                                  TRUE ~ flag_do))
   } else if (logb$instrument[l] == 'temp') {
     buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-      mutate(flag_temp = case_when(instrument_datetime >= logb$TIMESTAMP_start[l] &
-                                     instrument_datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l],
+      mutate(flag_temp = case_when(datetime >= logb$TIMESTAMP_start[l] &
+                                     datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l],
                                    TRUE ~ flag_temp))
   } else if (logb$data_table[l] == 'met') {
     buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-      mutate(flag_met = case_when(instrument_datetime >= logb$TIMESTAMP_start[l] &
-                                     instrument_datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l],
+      mutate(flag_met = case_when(datetime >= logb$TIMESTAMP_start[l] &
+                                     datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l],
                                    TRUE ~ flag_met))
   } else {
   }
@@ -158,9 +165,11 @@ for(l in 1:nrow(logb)){
 ## thermistors ----
 
 #recode as necessary from log
+unique(buoy2021b_wq_L1$flag_temp)
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
   mutate_at(vars(all_of(alltemp)),
-            ~ case_when(flag_temp != '' ~ NA_real_, #all flags indicate that sensors were out of the water
+            ~ case_when(flag_temp == 'o' ~ NA_real_, 
+                        flag_temp == 'R' ~ NA_real_, #all flags indicate that sensors were out of the water
                         TRUE ~ .))
 
 buoyb_therm_vert <- buoy2021b_wq_L1 %>% 
@@ -188,7 +197,7 @@ ggplot(buoyb_therm_vert, aes(x = datetime, y = values, color = variable)) +
   final_theme
 
 #look at data on a monthly basis
-months = c(seq.Date(as.Date('2021-06-01'), as.Date('2021-10-01'), 'month'))
+months = c(seq.Date(as.Date('2021-06-01'), as.Date('2022-01-01'), 'month'))
 
 #plot data in monthly iterations
 for(i in 1:length(months)) {
@@ -260,9 +269,10 @@ rm(buoyb_therm_vert)
 
 ## exo ----
 #recode as necessary from log
+unique(buoy2021b_wq_L1$flag_exo)
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
   mutate_at(vars(all_of(exo), all_of(exoinfo)),
-            ~ case_when(flag_exo != '' ~ NA_real_,
+            ~ case_when(flag_exo != '' ~ NA_real_,# all flags should be recoded
                         TRUE ~ .))
 
 #recode record prior to buoy deploy
@@ -359,18 +369,22 @@ miscal_date <- as.POSIXct('2021-07-20 10:20:00', tz=buoyb_tz)
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
   mutate(flag_exodo = case_when(datetime < miscal_date & !is.na(DOppm) ~ 'm',
                                 flag_exo == 'c' ~ 'c', 
+                                flag_exo == 'w' ~ 'w',
                                 TRUE ~ '')) 
 
 # flag algae for bdl
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(flag_bga = case_when(BGAPC_RFU < 0 ~ 'z',
-                              TRUE ~ '')) 
+  mutate(flag_bga_rfu = case_when(BGAPC_RFU < 0 ~ 'z',
+                              TRUE ~ ''),
+         flag_bga_ugl = case_when(BGAPC_UGL < 0 ~ 'z',
+                                  TRUE ~ '')) 
 
 # recode all of BGAPC_UGL, all are negative values
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(BGAPC_UGL = case_when(BGAPC_UGL < 0 ~ NA_real_,
-                              TRUE ~ BGAPC_RFU)) 
-
+  mutate(BGAPC_UGL = case_when(BGAPC_UGL < 0 ~ 0,
+                              TRUE ~ BGAPC_UGL),
+         BGAPC_RFU = case_when(BGAPC_RFU < 0 ~ 0,
+                               TRUE ~ BGAPC_RFU)) 
 
 buoyb_exo_vert <- buoy2021b_wq_L1 %>% 
   select(datetime, flag_exo, all_of(exo)) %>% 
@@ -390,17 +404,17 @@ ggplot(buoyb_exo_vert, aes(x = datetime, y = values)) +
 buoy2021b_wq_L1$BGA_stdev = zoo::rollapply(buoy2021b_wq_L1$BGAPC_RFU, width=3, sd, align='center', partial=F, fill=NA)
 range(buoy2021b_wq_L1$BGA_stdev, na.rm = T)
 
-sd(buoy2021b_wq_L1$BGAPC_RFU, na.rm = T)
+range(buoy2021b_wq_L1$BGAPC_RFU, na.rm = T)
 
-#range isn't even 2*SD, so only flag the few SD outliers as 'suspect'
+#range of data isn't even 2*SD, so only flag the few SD outliers as 'suspect'
 
-ggplot(buoy2021b_wq_L1, aes(x = datetime, y = BGA_stdev)) +
+ggplot(buoy2021b_wq_L1, aes(x = datetime, y = BGAPC_RFU, color = BGA_stdev)) +
   geom_point()
 
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(flag_bga = case_when(flag_bga == '' & BGA_stdev > 0.06 & BGAPC_RFU > 0.1 ~ 's',
-                              flag_bga != '' & BGA_stdev > 0.06 & BGAPC_RFU > 0.1 ~ paste0(flag_bga, ', s'),
-                              TRUE ~ flag_bga))
+  mutate(flag_bga_rfu = case_when(flag_bga_rfu == '' & BGA_stdev > 0.06 & BGAPC_RFU > 0.1 ~ 's',
+                                  flag_bga_rfu != '' & BGA_stdev > 0.06 & BGAPC_RFU > 0.1 ~ paste0(flag_bga_rfu, ', s'),
+                                 TRUE ~ flag_bga_rfu))
 
 ### chla ----
 
@@ -410,6 +424,7 @@ buoy2021b_wq_L1$chla_stdev = zoo::rollapply(buoy2021b_wq_L1$Chlor_RFU, width=3, 
 range(buoy2021b_wq_L1$chla_stdev, na.rm = T)
 
 chla_sd = sd(buoy2021b_wq_L1$Chlor_RFU, na.rm = T)
+chla_sd
 
 ggplot(buoy2021b_wq_L1, aes(x = datetime, y = Chlor_RFU, color = chla_stdev)) +
   geom_point()
@@ -417,14 +432,14 @@ ggplot(buoy2021b_wq_L1, aes(x = datetime, y = Chlor_RFU, color = chla_stdev)) +
 #recode > 4SD, flag
 
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(flag_chla = case_when(chla_stdev > 4*chla_sd & Chlor_RFU > 2 ~ 'x',
+  mutate(flag_chla_rfu = case_when(chla_stdev > 4*chla_sd & Chlor_RFU > 2 ~ 'x',
                                TRUE ~ '')) %>% 
   mutate_at(vars(Chlor_RFU, Chlor_UGL),
             ~ case_when(chla_stdev > 4*chla_sd & Chlor_RFU > 2 ~ NA_real_,
                                TRUE ~ .))
 
 #check again after outlier removal
-ggplot(buoy2021b_wq_L1, aes(x = datetime, y = Chlor_RFU, color = flag_chla)) +
+ggplot(buoy2021b_wq_L1, aes(x = datetime, y = Chlor_RFU, color = flag_chla_rfu)) +
   geom_point()
 
 buoy2021b_wq_L1$chla_stdev = zoo::rollapply(buoy2021b_wq_L1$Chlor_RFU, width=3, sd, align='center', partial=F, fill=NA)
@@ -433,26 +448,6 @@ range(buoy2021b_wq_L1$chla_stdev, na.rm = T)
 chla_sd = sd(buoy2021b_wq_L1$Chlor_RFU, na.rm = T)
 
 ggplot(buoy2021b_wq_L1, aes(x = datetime, y = chla_stdev)) +
-  geom_point()
-
-# generally, the data 18th through cleaning on the 20th has some jumps in it, may be real - flag for suspect
-esept_chla_sd <- sd(buoy2021b_wq_L1$Chlor_RFU[buoy2021b_wq_L1$datetime>as.Date('2021-09-01') & 
-                                              buoy2021b_wq_L1$datetime <as.Date('2021-09-15')], na.rm = T)
-
-buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(flag_chla = case_when(flag_chla == '' &
-                                 datetime>=as.Date('2021-09-18') & 
-                                 datetime < as.POSIXct('2021-09-20 10:40', tz = buoyb_tz) &
-                                 chla_stdev>2*esept_chla_sd &
-                                 Chlor_RFU > 0.85~ 's',
-                               flag_chla != '' &
-                                 datetime>=as.Date('2021-09-18') & 
-                                 datetime < as.POSIXct('2021-09-20 10:40', tz = buoyb_tz) &
-                                 chla_stdev>2*esept_chla_sd &
-                                 Chlor_RFU > 0.85~ paste0(flag_chla, ', s'),
-                               TRUE ~ flag_chla))
-
-ggplot(buoy2021b_wq_L1, aes(x = datetime, y = Chlor_RFU, color = ex_flag)) +
   geom_point()
 
 #flag for fouling between cleanings 09-20 and 08-16; huge jump in chla and bga when cleaed on 9-20
@@ -465,23 +460,6 @@ buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>%
                                  datetime <= as.POSIXct('2021-09-20 10:40:00', tz = buoyb_tz) &
                                  . != '' ~ paste0(., ', f'),
                                TRUE ~ .))
-
-# getting some sensor anomalies in Oct that should be flagged for suspect
-oct_chla_sd <- sd(buoy2021b_wq_L1$Chlor_RFU[buoy2021b_wq_L1$datetime>as.Date('2021-10-01')], na.rm = T)
-buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(flag_chla = case_when(flag_chla == '' &
-                                 datetime>as.Date('2021-10-01') & 
-                                 chla_stdev>2*oct_chla_sd & 
-                                 Chlor_RFU > 0.75 ~ 's',
-                               flag_chla != '' &
-                                 datetime>as.Date('2021-10-01') & 
-                                 chla_stdev>2*oct_chla_sd & 
-                                 Chlor_RFU > 0.75 ~ paste0(flag_chla, ', s'),
-                             TRUE ~ flag_chla))
-
-
-ggplot(buoy2021b_wq_L1, aes(x = datetime, y = Chlor_RFU, color = flag_chla)) +
-  geom_point()
 
 # plot monthly
 for(i in 1:length(months)) {

@@ -5,9 +5,6 @@
 #* TITLE:   Sunapee_buoy_2008.r                                  *
 #* PROJECT: SunapeeBuoy.RProj                                    *
 #* AUTHOR:  Bethel Steele                                        *
-#* SYSTEM:  Lenovo ThinkCentre, Win 10, R 3.6.1, RStudio 1.2.5001*
-#* DATE:    01Apr2020                                            *
-#* PURPOSE: QAQC and collate buoy data                           *
 #*****************************************************************
 
 source('library_func_lists.R')
