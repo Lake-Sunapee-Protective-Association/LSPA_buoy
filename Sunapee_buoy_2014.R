@@ -817,16 +817,22 @@ ggplot(buoy2014_vert_lowdo,
   final_theme +
   scale_x_datetime(date_minor_breaks = '1 month')
 
-# add presumed calibration flags
+# add presumed cleaning flags
 buoy2014_L1 <- buoy2014_L1 %>% 
-  mutate(flag_do10p5m = case_when(is.na(flag_do10p5m) & datetime == as.POSIXct('2014-06-09 15:00', tz=buoy_tz) ~ 'wp',
-                                   !is.na(flag_do10p5m) & datetime == as.POSIXct('2014-06-09 15:00', tz=buoy_tz) ~ paste(flag_do10p5m, 'wp', sep = '; '),
+  mutate(flag_do10p5m = case_when(flag_do10p5m == '' & datetime == as.POSIXct('2014-06-09 15:00', tz=buoy_tz) ~ 'wp',
+                                  flag_do10p5m != '' & datetime == as.POSIXct('2014-06-09 15:00', tz=buoy_tz) ~ paste(flag_do10p5m, 'wp', sep = '; '),
                                    TRUE ~ flag_do10p5m)) %>% 
-  mutate(flag_do1p5m = case_when(is.na(flag_do1p5m) & datetime == as.POSIXct('2014-06-09 15:00', tz=buoy_tz) ~ 'wp',
-                                   !is.na(flag_do1p5m) & datetime == as.POSIXct('2014-06-09 15:00', tz=buoy_tz) ~ paste(flag_do1p5m, 'wp', sep = '; '),
-                                   is.na(flag_do1p5m) & datetime == as.POSIXct('2014-10-14 10:20', tz=buoy_tz) ~ 'wp',
-                                   !is.na(flag_do1p5m)  & datetime == as.POSIXct('2014-10-14 10:20', tz=buoy_tz) ~ paste(flag_do1p5m, 'wp', sep = '; '),
+  mutate(flag_do1p5m = case_when(flag_do1p5m == '' & datetime == as.POSIXct('2014-06-09 15:00', tz=buoy_tz) ~ 'wp',
+                                 flag_do1p5m != '' & datetime == as.POSIXct('2014-06-09 15:00', tz=buoy_tz) ~ paste(flag_do1p5m, 'wp', sep = '; '),
+                                 flag_do1p5m == '' & datetime == as.POSIXct('2014-10-14 10:20', tz=buoy_tz) ~ 'wp',
+                                flag_do1p5m != ''  & datetime == as.POSIXct('2014-10-14 10:20', tz=buoy_tz) ~ paste(flag_do1p5m, 'wp', sep = '; '),
                                    TRUE ~ flag_do1p5m))
+
+#add flag for no calibration on record
+buoy2014_L1 <- buoy2014_L1 %>% 
+  mutate(vars(flag_do1p5m, flag_do10p5m),
+         ~ case_when(. == '' ~ 'x',
+                     . != '' ~ paste('x', ., sep = '; ')))
 
 rm(buoy2014_vert_do, buoy2014_vert_do_L1, buoy2014_vert_updo, buoy2014_vert_lowdo)
 
@@ -881,8 +887,8 @@ ggplot(buoy2014_L1,
 
 #par likely obscured feb 13-19
 buoy2014_L1 <- buoy2014_L1 %>% 
-  mutate(flag_par = case_when(is.na(flag_par) & datetime >= as.POSIXct('2014-02-13', tz=buoy_tz) & datetime < as.POSIXct('2014-02-20', tz=buoy_tz) ~ 'o',
-                              !is.na(flag_par) & datetime >= as.POSIXct('2014-02-13', tz=buoy_tz) & datetime < as.POSIXct('2014-02-20', tz=buoy_tz) ~ paste('o', flag_par, sep = '; '),
+  mutate(flag_par = case_when(flag_par == '' & datetime >= as.POSIXct('2014-02-13', tz=buoy_tz) & datetime < as.POSIXct('2014-02-20', tz=buoy_tz) ~ 'o',
+                              flag_par != '' & datetime >= as.POSIXct('2014-02-13', tz=buoy_tz) & datetime < as.POSIXct('2014-02-20', tz=buoy_tz) ~ paste('o', flag_par, sep = '; '),
                               TRUE ~ flag_par))
 
 # ggplot(subset(buoy2014_L1,
