@@ -1400,7 +1400,7 @@ buoy_wind_vert_L1 <- buoy2017_L1 %>%
 
 # add a suspect flag to wind data from dec 23 through end of year - battery voltage is low and it looks like it's interfering here
 buoy2017_L1 <- buoy2017_L1 %>% 
-  mutate(flag_allwind = case_when(datetime >= as.Date('2017-12-23') ~ 's',
+  mutate(flag_allwind = case_when(datetime >= as.Date('2017-12-23') ~ 'sb',
                                   TRUE ~ ''))
 buoy_wind_vert_L1 <- buoy2017_L1 %>% 
   select(datetime, AveWindDir, AveWindSp, MaxWindDir, MaxWindSp, location, flag_allwind) %>% 
