@@ -1734,7 +1734,7 @@ colnames(buoy2017_L1)
 
 #export L1 tempstring file
 buoy2017_L1 %>%
-  select(datetime, location, waterTemperature_degC_0p85m:waterTemperature_degC_9p85m, flag_temp_0p85m) %>%
+  select(datetime, location, waterTemperature_degC_0p85m:waterTemperature_degC_9p85m, flag_temp0p85m) %>%
   mutate(datetime = as.character(datetime)) %>%
   write_csv(., file.path(dump_dir,'tempstring/2017_tempstring_L1_v2022.csv'))
 
