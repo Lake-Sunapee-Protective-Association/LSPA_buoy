@@ -38,6 +38,10 @@ datelength2009[datelength2009$date == '2009-03-08',]
 datelength2009[datelength2009$date == '2009-11-01',]
 #no dst observed here. 
 
+#check neighboring dates, just in case
+datelength2009[datelength2009$date == '2009-10-31',]
+datelength2009[datelength2009$date == '2009-11-02',]
+
 #force into NYtz with dst; convert to utc-5
 buoy2009_L1 <- buoy2009_L0 %>% 
   mutate(datetime_instrument = force_tz(datetime, tz = 'America/New_York'),

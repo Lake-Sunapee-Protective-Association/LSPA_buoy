@@ -39,6 +39,10 @@ datelength2011[datelength2011$date == '2011-03-13',]
 datelength2011[datelength2011$date == '2011-11-06',]
 #all present
 
+#check neighboring days
+datelength2011[datelength2011$date == '2011-11-05',]
+datelength2011[datelength2011$date == '2011-11-07',]
+
 #force into NYtz with dst; convert to utc-5
 buoy2011_L1 <- buoy2011_L0 %>% 
   mutate(datetime_instrument = force_tz(datetime, tz = 'America/New_York'),

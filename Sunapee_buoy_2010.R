@@ -39,6 +39,10 @@ datelength2010[datelength2010$date == '2010-03-14',]
 datelength2010[datelength2010$date == '2010-11-07',]
 #no data here 
 
+#check neighboring dates
+datelength2010[datelength2010$date == '2010-11-06',]
+datelength2010[datelength2010$date == '2010-11-08',]
+
 #force into NYtz with dst; convert to utc-5
 buoy2010_L1 <- buoy2010_L0 %>% 
   mutate(datetime_instrument = force_tz(datetime, tz = 'America/New_York'),
@@ -51,7 +55,6 @@ datelength2010 <- buoy2010_L1 %>%
   summarize(length(datetime))
 #look at dst
 datelength2010[datelength2010$date == '2010-03-14',]
-datelength2010[datelength2010$date == '2010-11-07',]
 
 #create dummy timestamp so there are no blanks
 alltimes_2010 <- as.data.frame(seq.POSIXt(as.POSIXct('2010-01-01 00:00', tz=buoy_tz), as.POSIXct('2010-12-31 23:50', tz=buoy_tz), '10 min')) %>% 

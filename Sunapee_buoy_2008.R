@@ -39,6 +39,10 @@ datelength2008[datelength2008$date == '2008-03-09',]
 datelength2008[datelength2008$date == '2008-11-02',]
 #no dst observed here. 
 
+#check neighboring days:
+datelength2008[datelength2008$date == '2008-11-01',]
+datelength2008[datelength2008$date == '2008-11-03',]
+
 #force into NYtz with dst; convert to utc-5
 buoy2008_L1 <- buoy2008_L0 %>% 
   mutate(datetime_instrument = force_tz(datetime, tz = 'America/New_York'),
@@ -881,8 +885,10 @@ buoy2008_L1 <- buoy2008_L1 %>%
 #   scale_x_datetime(date_minor_breaks = '1 hour')
 
 buoy2008_L1 <- buoy2008_L1 %>% 
-  mutate(flag_do1p5m = case_when(datetime == as.POSIXct('2008-06-09 8:30', tz = buoy_tz) & flag_do1p5m == '' ~ 'w',
-                                datetime == as.POSIXct('2008-06-09 8:30', tz = buoy_tz) & flag_do1p5m != '' ~ paste('w', flag_do1p5m, sep = '; '),
+  mutate(flag_do1p5m = case_when(datetime == as.POSIXct('2008-06-09 8:30', tz = buoy_tz) & 
+                                   flag_do1p5m == '' ~ 'w',
+                                datetime == as.POSIXct('2008-06-09 8:30', tz = buoy_tz) & 
+                                  flag_do1p5m != '' ~ paste('w', flag_do1p5m, sep = '; '),
                                 TRUE ~ flag_do1p5m))
  
 # ggplot(subset(do_vert,
@@ -960,7 +966,9 @@ buoy2008_L1 <- buoy2008_L1 %>%
 #start seeing intermittent readings dec 29 - adding flag of intermittent do data from then through the end of the month
 buoy2008_L1 <- buoy2008_L1 %>% 
   mutate(flag_do1p5m = case_when(datetime >= as.POSIXct('2008-12-29', tz = buoy_tz) & flag_do1p5m == '' ~ 'i',
-                                TRUE ~ paste(flag_do1p5m, 'i', sep ='; ')))
+                                 datetime >= as.POSIXct('2008-12-29', tz = buoy_tz) & 
+                                   flag_do1p5m != '' ~  paste(flag_do1p5m, 'i', sep ='; ')),
+                                TRUE ~flag_do1p5m)
 do_vert_b <- buoy2008_L1 %>% 
   select(datetime, DOSat, DOppm, DOTempC, flag_do1p5m) %>% 
   pivot_longer(names_to = 'variable', values_to = 'value', -c(datetime, flag_do1p5m))

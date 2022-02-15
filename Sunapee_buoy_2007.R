@@ -38,6 +38,10 @@ datelength2007 <- buoy2007_L0 %>%
 datelength2007[datelength2007$date == '2007-11-04',]
 #a couple fewer on this day, but not at the right time. Assume no DST observed
 
+#check next day and previous just in case
+datelength2007[datelength2007$date == '2007-11-03',]
+datelength2007[datelength2007$date == '2007-11-05',]
+
 #make sure all timestamps present and create L1 dataset
 #create dummy timestamp so there are no blanks
 range(buoy2007_L0$datetime)

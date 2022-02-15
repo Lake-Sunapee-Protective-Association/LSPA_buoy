@@ -39,6 +39,11 @@ datelength2012[datelength2012$date == '2012-03-11',]
 datelength2012[datelength2012$date == '2012-11-04',]
 #all present
 
+#check neighboring days
+datelength2012[datelength2012$date == '2012-11-03',]
+datelength2012[datelength2012$date == '2012-11-06',]
+
+
 #force into NYtz with dst; convert to utc-5
 buoy2012_L1 <- buoy2012_L0 %>% 
   mutate(datetime_instrument = force_tz(datetime, tz = 'America/New_York'),
@@ -396,7 +401,7 @@ ggplot(do_vert, aes(x = datetime, y = value)) +
 #        x = NULL,
 #        y = NULL) +
 #   scale_x_datetime(date_minor_breaks = '1 hour')
-# 
+
 buoy2012_L1 <- buoy2012_L1 %>% 
   mutate_at(vars(DOSat, DOppm, DOTempC),
             ~(case_when(datetime >= as.POSIXct('2012-04-12 11:20', tz=buoy_tz) &
