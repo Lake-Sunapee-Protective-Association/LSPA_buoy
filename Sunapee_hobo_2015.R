@@ -3,13 +3,7 @@
 #*                                                               *
 #* TITLE:   Sunapee_buoy_2015.r                                  *
 #* AUTHOR:  Bethel Steele                                        *
-#* SYSTEM:  Lenovo ThinkCentre, Win 10, R 3.4.2, RStudio 1.1.383 *
 #* PROJECT: Lake Sunapee Buoy Data Cleaning                      *
-#* PURPOSE: create L0 and L1 data for buoy data 2015 using       *
-#*          similar methods to CCC and DR                        *
-#* PREVIOUS VERSION: 'Sunapee_buoy_2015_17Oct2017.R'             *
-#*                   'Sunapee_buoy_2015_11Oct2017.R'             *
-#*                   'Sunapee_buoy_2014-2016_07Aug2017.R'        *
 #*****************************************************************
 
 source('library_func_lists.R')
@@ -18,11 +12,15 @@ source('library_func_lists.R')
 hobo2015 <- read_csv('C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L0/2015 Summer Hobo.csv',
                       col_types = 'icnnnnnnnnnnnnnnnnnn')
 
+head(hobo2015)
+tail(hobo2015)
+
+hobo_tz = 'America/New_York'
 
 #format date of hobo sensors
 hobo2015 <- hobo2015 %>% 
   rename(Date.Time = 'Date/Time') %>% 
-  mutate(datetime = as.POSIXct(Date.Time, format='%m/%d/%Y %H:%M', tz='UTC')) %>% 
+  mutate(datetime = as.POSIXct(Date.Time, format='%m/%d/%Y %H:%M', tz=hobo_tz)) %>% 
   select(-Date.Time)
 head(hobo2015)
 
@@ -54,23 +52,29 @@ ggplot(subset(hobo_vert, subset=(datetime>='2015-01-01' & datetime < '2016-01-01
 
 tail(hobo2015)
 
+#add CV
+hobo2015 <- hobo2015 %>%
+  select(datetime, TempC_1m, TempC_2m, TempC_3m, TempC_4m, TempC_5m, TempC_6m, TempC_7m, TempC_8m, TempC_9m) %>%
+  rename(waterTemperature_degC_0p5m = 'TempC_1m',
+         waterTemperature_degC_1p5m = 'TempC_2m',
+         waterTemperature_degC_2p5m = 'TempC_3m',
+         waterTemperature_degC_3p5m = 'TempC_4m',
+         waterTemperature_degC_4p5m = 'TempC_5m',
+         waterTemperature_degC_5p5m = 'TempC_6m',
+         waterTemperature_degC_6p5m = 'TempC_7m',
+         waterTemperature_degC_7p5m = 'TempC_8m',
+         waterTemperature_degC_8p5m = 'TempC_9m') 
+
+#convert to GMT+5
+hobo2015 <- hobo2015 %>%
+  rename(datetime.local = datetime) %>% 
+  mutate(datetime = with_tz(datetime.local, tz = 'Etc/GMT+5'))
+
 #export L1 tempstring file
 hobo2015 %>%
-  select(datetime, TempC_1m, TempC_2m, TempC_3m, TempC_4m, TempC_5m, TempC_6m, TempC_7m, TempC_8m, TempC_9m) %>%
-  rename(TempC_0p5m = 'TempC_1m',
-         TempC_1p5m = 'TempC_2m',
-         TempC_2p5m = 'TempC_3m',
-         TempC_3p5m = 'TempC_4m',
-         TempC_4p5m = 'TempC_5m',
-         TempC_5p5m = 'TempC_6m',
-         TempC_6p5m = 'TempC_7m',
-         TempC_7p5m = 'TempC_8m',
-         TempC_8p5m = 'TempC_9m') %>%
   mutate(datetime = as.character(datetime)) %>%
   mutate(location = 'loon') %>% 
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/tempstring/2015_hobotempstring_L1.csv') %>% 
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/record collations/tempstring/2015_hobotempstring_L1.csv')
-
+  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/tempstring/2015_hobotempstring_L1_v2022.csv') 
 #clean up workspace
 rm(hobo_vert)
 

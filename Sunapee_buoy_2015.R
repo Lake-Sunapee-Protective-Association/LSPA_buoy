@@ -341,6 +341,31 @@ buoy2015_vert_do <- buoy2015_L1 %>%
 #   final_theme +
 #   scale_x_datetime(date_minor_breaks = '1 day')
 # 
+# #errant do April 10
+# ggplot(subset(buoy2015_vert_do,
+#               subset=(datetime >= as.POSIXct('2015-04-10', tz=buoy_tz) & datetime < as.POSIXct('2015-04-11', tz=buoy_tz))),
+#        aes(x=datetime, y=value)) +
+#   geom_point() +
+#   facet_grid(variable~., scales='free_y') +
+#   labs(title='apr 2015, NAs recoded',
+#        x=NULL,
+#        y=NULL) +
+#   final_theme +
+#   scale_x_datetime(date_minor_breaks = '1 hour')
+# 
+# #errant do April 19
+# ggplot(subset(buoy2015_vert_do,
+#               subset=(datetime >= as.POSIXct('2015-04-19', tz=buoy_tz) & datetime < as.POSIXct('2015-04-20', tz=buoy_tz))),
+#        aes(x=datetime, y=value)) +
+#   geom_point() +
+#   facet_grid(variable~., scales='free_y') +
+#   labs(title='apr 2015, NAs recoded',
+#        x=NULL,
+#        y=NULL) +
+#   final_theme +
+#   scale_x_datetime(date_minor_breaks = '1 hour')
+# 
+# #buoy gets pulled Apr 22
 # ggplot(subset(buoy2015_vert_do,
 #               subset=(datetime >= as.POSIXct('2015-04-22', tz=buoy_tz) & datetime < as.POSIXct('2015-04-23', tz=buoy_tz))),
 #        aes(x=datetime, y=value)) +
@@ -355,8 +380,10 @@ buoy2015_vert_do <- buoy2015_L1 %>%
 #buoy offline for repair
 buoy2015_L1 <- buoy2015_L1 %>% 
   mutate_at(vars(all_of(upDO)),
-            ~(case_when(datetime>=as.POSIXct('2015-04-22 10:00', tz=buoy_tz) & datetime<=as.POSIXct('2015-04-22 10:10', tz=buoy_tz) ~ NA_real_,
-                           TRUE ~ .))) %>% 
+            ~(case_when(datetime>=as.POSIXct('2015-04-10 04:20', tz=buoy_tz) & datetime<=as.POSIXct('2015-04-10 06:10', tz=buoy_tz) ~ NA_real_,
+                        datetime>=as.POSIXct('2015-04-19 20:30', tz=buoy_tz) & datetime<=as.POSIXct('2015-04-19 21:20', tz=buoy_tz) ~ NA_real_,
+                        datetime>=as.POSIXct('2015-04-22 10:00', tz=buoy_tz) & datetime<=as.POSIXct('2015-04-22 10:10', tz=buoy_tz) ~ NA_real_,
+                        TRUE ~ .))) %>% 
   mutate(location = case_when(datetime<as.POSIXct('2015-04-22 10:00', tz=buoy_tz) ~ 'harbor',
                               TRUE ~ 'offline'))
 
@@ -1591,5 +1618,3 @@ buoy2015_L1 %>%
   mutate(datetime = as.character(datetime)) %>%
   write_csv(., file.path(dump_dir, 'met/2015_met_L1_v2022.csv'))
   
-
-
