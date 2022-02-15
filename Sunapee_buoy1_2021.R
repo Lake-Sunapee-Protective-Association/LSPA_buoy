@@ -1,13 +1,9 @@
 #*****************************************************************
 #*      Cary Institute of Ecosystem Studies (Millbrook, NY)      *
 #*                                                               *
-#* TITLE:   Sunapee_buoy_2021.r                                  *
+#* TITLE:   Sunapee_buoy1_2021.r                                 *
 #* AUTHOR:  Bethel Steele                                        *
-#* SYSTEM:  Lenovo ThinkCentre, Win 10, R 4.0.3, RStudio 1.1.383 *
-#* DATE:    16Jun2021                                            *
 #* PROJECT: Lake Sunapee Buoy Data Cleaning                      *
-#* PURPOSE: create L0 and L1 data for buoy data 2021 using       *
-#*          similar methods to CCC and DR                        *
 #*****************************************************************
 
 source('library_func_lists.R')
@@ -15,7 +11,9 @@ source('library_func_lists.R')
 #point to directories
 data_dir = 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L0/'
 log_dir = 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/operation notes/'
+dump_dir = 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/'
 
+  
 # store time zones
 buoya_tz = 'Etc/GMT+5'
 
@@ -23,7 +21,7 @@ log_tz = 'America/New_York'
 
 # BRING IN RAW DATA ----
 
-## first part of year, buoy 1.0 ----
+## first part of year, buoy v1.0 ----
 buoy2021a_L0 <- read_xlsx(file.path(data_dir, '2021_BuoyData.xlsx'),
                           col_types = c('text', 'text', 'text', 'text', 
                                         'numeric', 'numeric', 'numeric', 'numeric', 
@@ -37,7 +35,7 @@ buoy2021a_L0 <- read_xlsx(file.path(data_dir, '2021_BuoyData.xlsx'),
 head(buoy2021a_L0)
 
 ## bring in log info ----
-loga <- read_xlsx(file.path(log_dir, 'LS Buoy Operation Log - BGS master.xlsx'),
+loga <- read_xlsx(file.path(log_dir, 'LS Buoy Operation Log - BGS primary.xlsx'),
                   sheet = 'Log') %>% 
   filter(Year == 2021)
 
@@ -95,12 +93,8 @@ buoy2021a_L1 <- buoy2021a_L0 %>%
   arrange(datetime)
 #add flag for missing data from buoy
 buoy2021a_L1 <- buoy2021a_L1 %>% 
-  mutate(buoyoffline = case_when(is.na(rowid) ~ 'T',
-                                 TRUE ~ 'F')) %>% 
-  select(-rowid, -index) %>% 
-  mutate(location = case_when(buoyoffline == 'T' ~ 'offline',
+  mutate(location = case_when(is.na(rowid) ~ 'offline',
                               TRUE ~ NA_character_)) %>% 
-  select(-buoyoffline) %>% 
   select(-all_of(chla))
 
 #clean up workspace
@@ -133,6 +127,7 @@ ggplot(buoy2021a_L1, aes(x = datetime, y = LoggerBatV)) +
 ggplot(buoy2021a_L1, aes(x = datetime, y = RadioBatV)) +
   geom_point()
 
+#these look good!
 
 # 2021a ----
 
@@ -169,18 +164,18 @@ ggplot(buoy2021a_therm_vert, aes(x=datetime, y=value, color = variable)) +
   scale_x_datetime(date_minor_breaks = '1 month') +
   final_theme
 
-#correct column names for sensor offset
+#correct column names for sensor offset, apply CV
 buoy2021a_L1 <- buoy2021a_L1 %>% 
-  rename(TempC_9p75m = 'TempC_9m',
-         TempC_8p75m = 'TempC_8m',
-         TempC_7p75m = 'TempC_7m',
-         TempC_6p75m = 'TempC_6m',
-         TempC_5p75m = 'TempC_5m',
-         TempC_4p75m = 'TempC_4m',
-         TempC_3p75m = 'TempC_3m',
-         TempC_2p75m = 'TempC_2m',
-         TempC_1p75m = 'TempC_1m',
-         TempC_0p75m = 'TempC_0m') 
+  rename(waterTemperature_degC_9p75m = 'TempC_9m',
+         waterTemperature_degC_8p75m = 'TempC_8m',
+         waterTemperature_degC_7p75m = 'TempC_7m',
+         waterTemperature_degC_6p75m = 'TempC_6m',
+         waterTemperature_degC_5p75m = 'TempC_5m',
+         waterTemperature_degC_4p75m = 'TempC_4m',
+         waterTemperature_degC_3p75m = 'TempC_3m',
+         waterTemperature_degC_2p75m = 'TempC_2m',
+         waterTemperature_degC_1p75m = 'TempC_1m',
+         waterTemperature_degC_0p75m = 'TempC_0m') 
 
 #clean up workspace
 rm(buoy2021a_therm_vert)
@@ -188,7 +183,6 @@ rm(buoy2021a_therm_vert)
 # add location flag here
 buoy2021a_L1 <- buoy2021a_L1 %>% 
   mutate(location = case_when(is.na(location) ~ 'harbor',
-                              datetime >= end_of_buoy1p0 ~ 'offline',
                               TRUE ~ location))
 
 ## DO ----
@@ -205,6 +199,16 @@ ggplot(buoy2021a_do_vert, aes(x=datetime, y=value)) +
   final_theme
 
 rm(buoy2021a_do_vert)
+
+#rename with CV
+buoy2021a_L1 <- buoy2021a_L1 %>% 
+  rename(oxygenDissolved_mgl_1p5m = DOppm,
+       oxygenDissolvedPercentOfSaturation_pct_1p5m = DOSat,
+       waterTemperature_DO_degC_1p5m = DOTempC,
+       oxygenDissolved_mgl_10p5m = DOLowPPM,
+       oxygenDissolvedPercentOfSaturation_pct_10p5m = DOLowSat,
+       waterTemperature_DO_degC_10p5m = DOLowTempC)
+
 
 ## wind ----
 buoya_wind_vert <- buoy2021a_L1 %>%
@@ -261,18 +265,19 @@ ggplot(subset(buoya_wind_vert,
   scale_color_colorblind()
 
 buoy2021a_L1 <- buoy2021a_L1 %>% 
-  mutate(flag_wind = case_when(datetime >= as.POSIXct(paste(look_date, '11:30', sep = ' '), tz=buoya_tz) & 
+  mutate_at(vars(all_of(wind)),
+            ~case_when(datetime >= as.POSIXct(paste(look_date, '11:30', sep = ' '), tz=buoya_tz) & 
                            datetime < as.POSIXct(paste(look_date, '14:00', sep = ' '), tz=buoya_tz) & 
-                           MaxWindSp == 0 ~ 'f',
-                         TRUE ~ ''))
+                           MaxWindSp == 0 ~ NA_real_,
+                         TRUE ~ .))
 
 buoya_wind_vert_L1 <- buoy2021a_L1 %>% 
-  select(datetime, flag_wind, all_of(wind)) %>% 
-  pivot_longer(names_to = 'variable', values_to='value', -c(datetime, flag_wind))
+  select(datetime, all_of(wind)) %>% 
+  pivot_longer(names_to = 'variable', values_to='value', -c(datetime))
 
 ggplot(subset(buoya_wind_vert_L1,
               subset=(datetime >= as.POSIXct(look_date, tz=buoya_tz) & datetime < (as.POSIXct(look_date, tz=buoya_tz)+days(1)))),
-       aes(x=datetime, y=value, color = flag_wind)) +
+       aes(x=datetime, y=value)) +
   geom_point() +
   facet_grid(variable ~ ., scales = 'free_y') +
   labs(title = 'jan wind 2021, NAs recoded') +
@@ -294,23 +299,19 @@ ggplot(subset(buoya_wind_vert,
   scale_color_colorblind()
 
 buoy2021a_L1 <- buoy2021a_L1 %>% 
-  mutate(flag_wind = case_when(datetime >= as.POSIXct(paste(look_date, '8:00', sep = ' '), tz=buoya_tz) & 
-                                 datetime < as.POSIXct(paste(look_date, '14:30', sep = ' '), tz=buoya_tz) & 
-                                 MaxWindSp == 0 ~ 'f',
-                               TRUE ~ flag_wind)) %>% 
   mutate_at(vars(all_of(wind)),
             ~ case_when(datetime >= as.POSIXct(paste(look_date, '8:00', sep = ' '), tz=buoya_tz) & 
-                          datetime < as.POSIXct(paste(look_date, '13:00', sep = ' '), tz=buoya_tz) & 
+                          datetime < as.POSIXct(paste(look_date, '16:00', sep = ' '), tz=buoya_tz) & 
                           MaxWindSp == 0 ~ NA_real_,
                         TRUE ~ .))
 
 buoya_wind_vert_L1 <- buoy2021a_L1 %>% 
-  select(datetime, flag_wind, all_of(wind)) %>% 
-  pivot_longer(names_to = 'variable', values_to='value', -c(datetime, flag_wind))
+  select(datetime, all_of(wind)) %>% 
+  pivot_longer(names_to = 'variable', values_to='value', -c(datetime))
 
 ggplot(subset(buoya_wind_vert_L1,
               subset=(datetime >= as.POSIXct(look_date, tz=buoya_tz) & datetime < (as.POSIXct(look_date, tz=buoya_tz)+days(1)))),
-       aes(x=datetime, y=value, color = flag_wind)) +
+       aes(x=datetime, y=value)) +
   geom_point() +
   facet_grid(variable ~ ., scales = 'free_y') +
   labs(title = 'feb wind 2021, NAs recoded') +
@@ -318,7 +319,17 @@ ggplot(subset(buoya_wind_vert_L1,
   final_theme +
   scale_color_colorblind()
 
+#rename with CV
+buoy2021a_L1 <- buoy2021a_L1 %>% 
+  rename(windDirectionAverage_deg = AveWindDir,
+         windSpeedAverage_mps = AveWindSp,
+         windGustDirection_deg = MaxWindDir,
+         windGustSpeed_mps = MaxWindSp)
+
+
 ## PAR ----
+range(buoy2021a_L1$PAR, na.rm = T)
+
 #plot data in monthly iterations
 for(i in 1:length(months)) {
   chunk <- buoy2021a_L1 %>% 
@@ -341,32 +352,39 @@ for(i in 1:length(months)) {
 
 #recode when in transit, recode negative par to 0; add flag for night time par values
 buoy2021a_L1 <- buoy2021a_L1 %>% 
-  mutate(flag_PAR = case_when(PAR < 0 ~ 'z',
+  mutate(flag_par = case_when(PAR < 0 ~ 'z',
                          TRUE ~ '')) %>% 
   mutate(PAR = case_when(PAR < 0 ~ 0,
                          TRUE ~ PAR)) %>% 
-  mutate(flag_PAR = case_when(flag_PAR == '' ~ 'n',
-                              flag_PAR != '' ~ paste('n', flag_PAR, sep = ', ')))
+  mutate(flag_par = case_when(flag_par == '' ~ 'n',
+                              flag_par != '' ~ paste('n', flag_par, sep = '; ')))
 
 #looks like PAR obscured Mar 28
 buoy2021a_L1 <- buoy2021a_L1 %>% 
-  mutate(flag_PAR = case_when(flag_PAR == '' & datetime >= as.POSIXct('2021-03-28', tz='UTC') &
+  mutate(flag_par = case_when(flag_par == '' & datetime >= as.POSIXct('2021-03-28', tz='UTC') &
                                 datetime < as.POSIXct('2021-03-29', tz='UTC') ~ 'o',
-                              flag_PAR != '' & datetime >= as.POSIXct('2021-03-28', tz='UTC') &
-                                datetime < as.POSIXct('2021-03-29', tz='UTC') ~ paste('o', flag_PAR, sep = ', '),
-                              TRUE ~ flag_PAR))
-unique(buoy2021a_L1$flag_PAR)
+                              flag_par != '' & datetime >= as.POSIXct('2021-03-28', tz='UTC') &
+                                datetime < as.POSIXct('2021-03-29', tz='UTC') ~ paste('o', flag_par, sep = '; '),
+                              TRUE ~ flag_par))
+unique(buoy2021a_L1$flag_par)
 
 ggplot(buoy2021a_L1,
-       aes(x=datetime, y=PAR, color = flag_PAR)) +
+       aes(x=datetime, y=PAR, color = flag_par)) +
   geom_point() +
   labs(title = 'PAR 2021, NA recoded') +
   scale_x_datetime(date_minor_breaks = '1 month') +
   final_theme +
   scale_color_colorblind()
 
+#rename with CV
+buoy2021a_L1 <- buoy2021a_L1 %>% 
+  rename(radiationIncomingPAR_umolm2s = PAR)
+
 
 ## Air temp and RH ----
+range(buoy2021a_L1$AirTempC, na.rm = T)
+range(buoy2021a_L1$RelHum, na.rm = T)
+
 for(i in 1:length(months)) {
   chunk <- buoy2021a_L1 %>% 
     filter(datetime >= as.POSIXct(months[i], tz= buoya_tz) &
@@ -391,37 +409,22 @@ for(i in 1:length(months)) {
 
 #these look fine
 
+#rename with CV
+buoy2021a_L1 <- buoy2021a_L1 %>% 
+  rename(relativeHumidity_perc = RelHum,
+         airTemperature_degC = AirTempC)
+
 
 # EXPORT L1 DATA STREAMS ----
 colnames(buoy2021a_L1)
 
-#export L1 tempstring file
-buoy2021a_L1 %>%
-  select(datetime, TempC_0p75m:TempC_9p75m, location) %>%
-  mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/tempstring/2021a_tempstring_L1_corrdepths.csv')
+#not exporting temp or do data; incomplete and only data in harbor so mostly NA strings
 
-#export l1 do file
+#export l1 met file
 buoy2021a_L1 %>%
-  select(datetime, all_of(upDO), all_of(lowDO), location) %>%
+  select(datetime, location, 
+         windSpeedAverage_mps:windGustDirection_deg,
+         radiationIncomingPAR_umolm2s, flag_par,
+         airTemperature_degC, relativeHumidity_perc) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/2021a_do_L1.csv')
-
-#export l1 par file
-buoy2021a_L1 %>%
-  select(datetime, PAR, flag_PAR, location) %>%
-  mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2021a_PAR_L1.csv')
-
-#export l1 wind
-buoy2021a_L1 %>%
-  select(datetime, all_of(wind), flag_wind, location) %>%
-  mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2021a_wind_L1.csv')
-
-#export l1 air temp file
-buoy2021a_L1 %>%
-  select(datetime, AirTempC, RelHum, location) %>%
-  mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2021a_airtemp_RH_L1.csv')
-
+  write_csv(., file.path(dump_dir, 'met/2021a_met_L1_v2022.csv'))

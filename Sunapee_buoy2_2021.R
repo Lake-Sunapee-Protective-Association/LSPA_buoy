@@ -1,13 +1,10 @@
 #*****************************************************************
 #*      Cary Institute of Ecosystem Studies (Millbrook, NY)      *
 #*                                                               *
-#* TITLE:   Sunapee_buoy_2021.r                                  *
+#* TITLE:   Sunapee_buoy2_2021.r                                  *
 #* AUTHOR:  Bethel Steele                                        *
-#* SYSTEM:  Lenovo ThinkCentre, Win 10, R 4.0.3, RStudio 1.1.383 *
 #* DATE:    16Jun2021                                            *
 #* PROJECT: Lake Sunapee Buoy Data Cleaning                      *
-#* PURPOSE: create L0 and L1 data for buoy data 2021 using       *
-#*          similar methods to CCC and DR                        *
 #*****************************************************************
 
 source('library_func_lists.R')
@@ -15,6 +12,7 @@ source('library_func_lists.R')
 #point to directories
 data_dir = 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L0/2021/'
 log_dir = 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/operation notes/'
+dump_dir = 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/'
 
 # store time zones
 buoyb_tz = 'Etc/GMT+5'
@@ -39,7 +37,7 @@ head(buoy2021b_met_L0)
 ## bring in log info ----
 
 logb <- read_xlsx(file.path(log_dir, 'SUNP_MaintenanceLog_2021.xlsx'),
-                 sheet = 'MaintenanceLog')
+                  sheet = 'MaintenanceLog')
 
 
 # FORMAT DATA AND DEAL WITH TIMEZONES ----
@@ -50,8 +48,8 @@ logb <- read_xlsx(file.path(log_dir, 'SUNP_MaintenanceLog_2021.xlsx'),
 buoy2021b_wq_L1 <- buoy2021b_wq_L0 %>% 
   mutate(datetime = as.POSIXct(datetime),
          datetime = force_tz(datetime, tz = buoyb_tz),
-         date = as.Date(datetime)) %>% 
-  filter(datetime < as.Date('2022-01-01')) %>% 
+         date = format(datetime, '%Y-%m-%d')) %>% 
+  filter(datetime < as.POSIXct('2022-01-01', tz = buoyb_tz)) %>% 
   rownames_to_column('rowid_wq') %>% 
   select(-index)
 
@@ -59,33 +57,83 @@ buoy2021b_wq_L1 <- buoy2021b_wq_L0 %>%
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
   select(-EXO_date, -EXO_time)
 
-# record does not extend to DST, so no need to check.
+
 #double check total number of observations for each day (should only be 144 or less to confirm no DST)
 datetimetable <- buoy2021b_wq_L1 %>%
   group_by(date) %>%
-  summarize(n = length(datetime))
-#looks good
+  summarize(n = length(datetime)) %>% 
+  arrange(n)
+head(datetimetable, n = 10)
+tail(datetimetable)
+
 #double check DST dates
-buoy2021b_wq_L1[buoy2021b_wq_L1$date == as.Date('2021-11-07'),]$datetime
+buoy2021b_wq_L1[buoy2021b_wq_L1$datetime >= as.Date('2021-11-07') & buoy2021b_wq_L1$datetime < as.Date('2021-11-08'),]$datetime
+#and the following day
+buoy2021b_wq_L1[buoy2021b_wq_L1$datetime >= as.Date('2021-11-08') & buoy2021b_wq_L1$datetime < as.Date('2021-11-09'),]$datetime
+
+#look at date with 136 records
+buoy2021b_wq_L1[buoy2021b_wq_L1$datetime >= as.Date('2021-06-03') & buoy2021b_wq_L1$datetime < as.Date('2021-06-04'),]$datetime
+#missing some time around noon, no notes in maintenance log
+
 #look at date with 145 records
 buoy2021b_wq_L1[buoy2021b_wq_L1$date == as.Date('2021-12-06'),]$datetime
 #duplicate is 2021-12-06 14:10:00, check record to see if identical
 dupedate <- buoy2021b_wq_L1[buoy2021b_wq_L1$date == as.Date('2021-12-06'),]
+#data are identical
 buoy2021b_wq_L1 <- buoy2021b_wq_L1[buoy2021b_wq_L1$rowid_wq != 27532,] #remove the dupe row
+
+# get list of all datetimes from start of this record to end
+first_time <- first(buoy2021b_wq_L1$datetime)
+alltimes_2021 <- as.data.frame(seq.POSIXt(as.POSIXct(first_time, tz=buoya_tz), as.POSIXct('2021-12-31 23:50', tz=buoya_tz), '10 min')) %>%
+  rename("datetime" = !!names(.[1])) %>% 
+  rowid_to_column('index')
+buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>%
+  right_join(., alltimes_2021) %>%
+  arrange(datetime)
+#add flag for missing data from buoy
+buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
+  mutate(location = case_when(is.na(rowid_wq) ~ 'offline',
+                              TRUE ~ NA_character_)) 
 
 
 ### met ----
 buoy2021b_met_L1 <- buoy2021b_met_L0 %>% 
   mutate(datetime = as.POSIXct(datetime),
          datetime = force_tz(datetime, tz = buoyb_tz),
-         date = as.Date(datetime)) %>% 
+         date = format(datetime, '%Y-%m-%d')) %>% 
   filter(datetime < as.Date('2022-01-01')) %>% 
   rownames_to_column('rowid_met') %>% 
   select(-index)
 
+ggplot(buoy2021b_met_L1, aes(x = AveWindSp, y = AveWindSp2)) +
+  geom_point()
+
 #remove std column and dupe wind column
 buoy2021b_met_L1 <- buoy2021b_met_L1 %>% 
   select(-STD_winddir, -AveWindSp2)
+
+#look at time 
+#double check total number of observations for each day (should only be 1440 or less to confirm no DST)
+datetimetable <- buoy2021b_met_L1 %>%
+  group_by(date) %>%
+  summarize(n = length(datetime)) %>% 
+  arrange(n)
+head(datetimetable, n = 10)
+tail(datetimetable)
+
+#look at date with 1450 records
+buoy2021b_met_L1[buoy2021b_met_L1$date == as.Date('2021-12-06'),]$datetime
+
+#duplicate is 2021-12-06 14:10:00-14:20, check record to see if identical
+dupedate <- buoy2021b_met_L1[buoy2021b_met_L1$datetime >= as.POSIXct('2021-12-06 14:10', tz = buoyb_tz) &
+                               buoy2021b_met_L1$datetime <= as.POSIXct('2021-12-06 14:20', tz = buoyb_tz),]
+
+#data are identical for those 10 minutes: remove those data
+buoy2021b_met_L1 <- buoy2021b_met_L1 %>% 
+  filter(rowid_met < 267925 |
+           rowid_met >= 267935)
+
+#can't join the two together, as the timesteps are different.
 
 ### log ----
 logb <- logb %>% 
@@ -126,57 +174,64 @@ ggplot(buoy2021b_wq_L1, aes(x = datetime, y = RadioBatV)) +
   geom_point()
 ggplot(buoy2021b_wq_L1, aes(x = datetime, y = EXO_batt_V)) +
   geom_point()
-
+#these look good
 
 # 2021b wq ----
 
 #add flags from log
-#initiate columns
-buoy2021b_wq_L1$flag_exo = ''
-buoy2021b_wq_L1$flag_do = ''
-buoy2021b_wq_L1$flag_temp = ''
-buoy2021b_wq_L1$flag_met = ''
+#initiate columns for wq file
+buoy2021b_wq_L1$flag_allexo = ''
+buoy2021b_wq_L1$flag_do10p5m = ''
+buoy2021b_wq_L1$flag_alltemp = ''
 
 for(l in 1:nrow(logb)){
   if (logb$instrument[l] == 'EXO') {
-  buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-    mutate(flag_exo = case_when(datetime >= logb$TIMESTAMP_start[l] &
-                                  datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l],
-                                TRUE ~ flag_exo))
+    buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
+      mutate(flag_allexo = case_when(datetime >= logb$TIMESTAMP_start[l] &
+                                       datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l],
+                                     TRUE ~ flag_allexo))
   } else if (logb$instrument[l] == 'do' | logb$instrument[l] == 'DO') {
     buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-      mutate(flag_do = case_when(datetime >= logb$TIMESTAMP_start[l] &
-                                   datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l], 
-                                 TRUE ~ flag_do))
+      mutate(flag_do10p5m = case_when(datetime >= logb$TIMESTAMP_start[l] &
+                                        datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l], 
+                                      TRUE ~ flag_do10p5m))
   } else if (logb$instrument[l] == 'temp') {
     buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-      mutate(flag_temp = case_when(datetime >= logb$TIMESTAMP_start[l] &
-                                     datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l],
-                                   TRUE ~ flag_temp))
-  } else if (logb$data_table[l] == 'met') {
-    buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-      mutate(flag_met = case_when(datetime >= logb$TIMESTAMP_start[l] &
-                                     datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l],
-                                   TRUE ~ flag_met))
+      mutate(flag_alltemp = case_when(datetime >= logb$TIMESTAMP_start[l] &
+                                        datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l],
+                                      TRUE ~ flag_alltemp))
+  } 
+}
+
+#and for met file
+buoy2021b_met_L1$flag_allmet = ''
+
+for(l in 1:nrow(logb)){
+  if (logb$data_table[l] == 'met') {
+    buoy2021b_met_L1 <- buoy2021b_met_L1 %>% 
+      mutate(flag_allmet = case_when(datetime >= logb$TIMESTAMP_start[l] &
+                                       datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l],
+                                     TRUE ~ flag_allmet))
   } else {
   }
 }
 
+
 ## thermistors ----
 
 #recode as necessary from log
-unique(buoy2021b_wq_L1$flag_temp)
+unique(buoy2021b_wq_L1$flag_alltemp)
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
   mutate_at(vars(all_of(alltemp)),
-            ~ case_when(flag_temp == 'o' ~ NA_real_, 
-                        flag_temp == 'R' ~ NA_real_, #all flags indicate that sensors were out of the water
+            ~ case_when(flag_alltemp == 'o' ~ NA_real_, 
+                        flag_alltemp == 'R' ~ NA_real_, #all flags indicate that sensors were out of the water
                         TRUE ~ .))
 
 buoyb_therm_vert <- buoy2021b_wq_L1 %>% 
-  select(datetime, flag_temp, all_of(alltemp)) %>% 
+  select(datetime, flag_alltemp, all_of(alltemp)) %>% 
   pivot_longer(names_to = 'variable',
                values_to = 'values', 
-               -c(datetime,flag_temp))
+               -c(datetime,flag_alltemp))
 
 #recode record prior to buoy deploy
 redeploy = as.POSIXct('2021-06-07', tz = buoyb_tz)
@@ -187,10 +242,10 @@ buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>%
                         TRUE ~ .))
 
 buoyb_therm_vert <- buoy2021b_wq_L1 %>% 
-  select(datetime, flag_temp, all_of(alltemp)) %>% 
+  select(datetime, flag_alltemp, all_of(alltemp)) %>% 
   pivot_longer(names_to = 'variable',
                values_to = 'values', 
-               -c(datetime,flag_temp))
+               -c(datetime,flag_alltemp))
 
 ggplot(buoyb_therm_vert, aes(x = datetime, y = values, color = variable)) +
   geom_point() +
@@ -232,18 +287,19 @@ buoyb_therm_vert %>%
 
 redeploy_exact = as.POSIXct('2021-06-07 9:30', tz= buoyb_tz)
 
+unique(buoy2021b_wq_L1$location)
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
   mutate_at(vars(all_of(alltemp)),
             ~ case_when(datetime <= redeploy_exact ~ NA_real_,
                         TRUE ~ .)) %>% 
   mutate(location = case_when(datetime > redeploy_exact ~ 'loon',
-                              TRUE ~ 'offline'))
+                              TRUE ~ 'harbor'))
 
 buoyb_therm_vert <- buoy2021b_wq_L1 %>% 
-  select(datetime, flag_temp, all_of(alltemp)) %>% 
+  select(datetime, flag_alltemp, all_of(alltemp)) %>% 
   pivot_longer(names_to = 'variable',
                values_to = 'values', 
-               -c(datetime,flag_temp))
+               -c(datetime,flag_alltemp))
 
 buoyb_therm_vert %>% 
   filter(datetime >= as.POSIXct('2021-06-07 00:00', tz = buoyb_tz)&
@@ -269,10 +325,10 @@ rm(buoyb_therm_vert)
 
 ## exo ----
 #recode as necessary from log
-unique(buoy2021b_wq_L1$flag_exo)
+unique(buoy2021b_wq_L1$flag_allexo)
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
   mutate_at(vars(all_of(exo), all_of(exoinfo)),
-            ~ case_when(flag_exo != '' ~ NA_real_,# all flags should be recoded
+            ~ case_when(flag_allexo != '' ~ NA_real_,# all flags should be recoded
                         TRUE ~ .))
 
 #recode record prior to buoy deploy
@@ -282,12 +338,12 @@ buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>%
                         TRUE ~ .))
 
 buoyb_exo_vert <- buoy2021b_wq_L1 %>% 
-  select(datetime, flag_exo, all_of(exo)) %>% 
+  select(datetime, flag_allexo, all_of(exo)) %>% 
   pivot_longer(names_to = 'variable',
                values_to = 'values', 
-               -c(datetime,flag_exo))
+               -c(datetime,flag_allexo))
 
-ggplot(buoyb_exo_vert, aes(x = datetime, y = values, shape = flag_exo)) +
+ggplot(buoyb_exo_vert, aes(x = datetime, y = values, shape = flag_allexo)) +
   geom_point() +
   facet_grid(variable ~ ., scales = 'free_y') +
   final_theme
@@ -303,12 +359,12 @@ ggplot(buoy2021b_wq_L1, aes(x = datetime, y = EXO_depth_m)) +
   geom_point()
 
 buoyb_exo_vert <- buoy2021b_wq_L1 %>% 
-  select(datetime, flag_exo, all_of(exo)) %>% 
+  select(datetime, flag_allexo, all_of(exo)) %>% 
   pivot_longer(names_to = 'variable',
                values_to = 'values', 
-               -c(datetime,flag_exo))
+               -c(datetime,flag_allexo))
 
-ggplot(buoyb_exo_vert, aes(x = datetime, y = values, shape = flag_exo)) +
+ggplot(buoyb_exo_vert, aes(x = datetime, y = values, shape = flag_allexo)) +
   geom_point() +
   facet_grid(variable ~ ., scales = 'free_y') +
   final_theme
@@ -331,16 +387,15 @@ buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>%
                         TRUE ~ .))
 
 buoyb_exo_vert <- buoy2021b_wq_L1 %>% 
-  select(datetime, flag_exo, all_of(exo)) %>% 
+  select(datetime, flag_allexo, all_of(exo)) %>% 
   pivot_longer(names_to = 'variable',
                values_to = 'values', 
-               -c(datetime,flag_exo))
+               -c(datetime,flag_allexo))
 
-ggplot(buoyb_exo_vert, aes(x = datetime, y = values, shape = flag_exo)) +
+ggplot(buoyb_exo_vert, aes(x = datetime, y = values, shape = flag_allexo)) +
   geom_point() +
   facet_grid(variable ~ ., scales = 'free_y') +
   final_theme
-
 
 # plot monthly
 for(i in 1:length(months)) {
@@ -363,34 +418,35 @@ for(i in 1:length(months)) {
   ggsave(filename = paste0('graphs/2021/L0_exo_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
 }
 
-#flag do prior to 2021-07-20 10:20:00 as likely miscalibrated
-miscal_date <- as.POSIXct('2021-07-20 10:20:00', tz=buoyb_tz)
+#recode do prior to 2021-07-20 10:20:00 - hole in DO membrane
+doerr_date <- as.POSIXct('2021-07-20 10:20:00', tz=buoyb_tz)
 
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(flag_exodo = case_when(datetime < miscal_date & !is.na(DOppm) ~ 'm',
-                                flag_exo == 'c' ~ 'c', 
-                                flag_exo == 'w' ~ 'w',
+  mutate_at(all_of(exodo),
+            ~ case_when(datetime < doerr_date ~ NA_real_,
+                        TRUE ~ .))
+
+buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
+  mutate(flag_exodo = case_when(flag_allexo == 'c' ~ 'c', 
+                                flag_allexo == 'w' ~ 'w',
                                 TRUE ~ '')) 
 
-# flag algae for bdl
+# flag algae for bdl; no calibration on record
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(flag_bga_rfu = case_when(BGAPC_RFU < 0 ~ 'z',
-                              TRUE ~ ''),
-         flag_bga_ugl = case_when(BGAPC_UGL < 0 ~ 'z',
-                                  TRUE ~ '')) 
+  mutate(flag_exobgarfu = case_when(BGAPC_RFU < 0 ~ 'z',
+                                    TRUE ~ '')) 
 
-# recode all of BGAPC_UGL, all are negative values
-buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(BGAPC_UGL = case_when(BGAPC_UGL < 0 ~ 0,
-                              TRUE ~ BGAPC_UGL),
-         BGAPC_RFU = case_when(BGAPC_RFU < 0 ~ 0,
-                               TRUE ~ BGAPC_RFU)) 
+# drop bgapc ugl
+buoy2021b_wq_L1$BGAPC_UGL = NA_real_
+
+#recode chlor ugl to nareal
+buoy2021b_wq_L1$Chlor_UGL = NA_real_
 
 buoyb_exo_vert <- buoy2021b_wq_L1 %>% 
-  select(datetime, flag_exo, all_of(exo)) %>% 
+  select(datetime, flag_allexo, all_of(exo)) %>% 
   pivot_longer(names_to = 'variable',
                values_to = 'values', 
-               -c(datetime,flag_exo))
+               -c(datetime,flag_allexo))
 
 ggplot(buoyb_exo_vert, aes(x = datetime, y = values)) +
   geom_point() +
@@ -404,17 +460,22 @@ ggplot(buoyb_exo_vert, aes(x = datetime, y = values)) +
 buoy2021b_wq_L1$BGA_stdev = zoo::rollapply(buoy2021b_wq_L1$BGAPC_RFU, width=3, sd, align='center', partial=F, fill=NA)
 range(buoy2021b_wq_L1$BGA_stdev, na.rm = T)
 
-range(buoy2021b_wq_L1$BGAPC_RFU, na.rm = T)
+bga_sd = sd(buoy2021b_wq_L1$BGAPC_RFU, na.rm = T)
+bga_sd
 
 #range of data isn't even 2*SD, so only flag the few SD outliers as 'suspect'
 
 ggplot(buoy2021b_wq_L1, aes(x = datetime, y = BGAPC_RFU, color = BGA_stdev)) +
   geom_point()
+hist(buoy2021b_wq_L1$BGA_stdev)
 
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(flag_bga_rfu = case_when(flag_bga_rfu == '' & BGA_stdev > 0.06 & BGAPC_RFU > 0.1 ~ 's',
-                                  flag_bga_rfu != '' & BGA_stdev > 0.06 & BGAPC_RFU > 0.1 ~ paste0(flag_bga_rfu, ', s'),
-                                 TRUE ~ flag_bga_rfu))
+  mutate(flag_exobgarfu = case_when(flag_exobgarfu == '' & BGA_stdev > 0.06 ~ 's',
+                                    flag_exobgarfu != '' & BGA_stdev > 0.06 ~ paste0(flag_exobgarfu, '; s'),
+                                    TRUE ~ flag_exobgarfu))
+
+ggplot(buoy2021b_wq_L1, aes(x = datetime, y = BGAPC_RFU, color = BGA_stdev, shape = flag_exobgarfu)) +
+  geom_point()
 
 ### chla ----
 
@@ -427,46 +488,40 @@ chla_sd = sd(buoy2021b_wq_L1$Chlor_RFU, na.rm = T)
 chla_sd
 
 ggplot(buoy2021b_wq_L1, aes(x = datetime, y = Chlor_RFU, color = chla_stdev)) +
-  geom_point()
+  geom_point() +
+  geom_point(data = subset(buoy2021b_wq_L1,
+                           chla_stdev >1),
+             aes(x = datetime, y = Chlor_RFU), color = 'red')
 
-#recode > 4SD, flag
+hist(buoy2021b_wq_L1$chla_stdev)
 
+#recode outlier and run again
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(flag_chla_rfu = case_when(chla_stdev > 4*chla_sd & Chlor_RFU > 2 ~ 'x',
-                               TRUE ~ '')) %>% 
-  mutate_at(vars(Chlor_RFU, Chlor_UGL),
-            ~ case_when(chla_stdev > 4*chla_sd & Chlor_RFU > 2 ~ NA_real_,
-                               TRUE ~ .))
-
-#check again after outlier removal
-ggplot(buoy2021b_wq_L1, aes(x = datetime, y = Chlor_RFU, color = flag_chla_rfu)) +
-  geom_point()
+  mutate(Chlor_RFU = case_when(Chlor_RFU >2.9 ~ NA_real_,
+                               TRUE ~ Chlor_RFU))
 
 buoy2021b_wq_L1$chla_stdev = zoo::rollapply(buoy2021b_wq_L1$Chlor_RFU, width=3, sd, align='center', partial=F, fill=NA)
 range(buoy2021b_wq_L1$chla_stdev, na.rm = T)
 
 chla_sd = sd(buoy2021b_wq_L1$Chlor_RFU, na.rm = T)
+chla_sd
 
-ggplot(buoy2021b_wq_L1, aes(x = datetime, y = chla_stdev)) +
-  geom_point()
+#none are >4 sd
+ggplot(buoy2021b_wq_L1, aes(x = datetime, y = Chlor_RFU, color = chla_stdev)) +
+  geom_point() +
+  geom_point(data = subset(buoy2021b_wq_L1,
+                           chla_stdev > 4*chla_sd),
+             aes(x = datetime, y = Chlor_RFU), color = 'red')
 
-#flag for fouling between cleanings 09-20 and 08-16; huge jump in chla and bga when cleaed on 9-20
-buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate_at(vars(flag_chla, flag_bga),
-            ~ case_when(datetime >= as.POSIXct('2021-08-16 11:10:00', tz=buoyb_tz) &
-                                 datetime <= as.POSIXct('2021-09-20 10:40:00', tz = buoyb_tz) &
-                                 . == '' ~ 'f',
-                               datetime >= as.POSIXct('2021-08-16 11:10:00', tz=buoyb_tz) &
-                                 datetime <= as.POSIXct('2021-09-20 10:40:00', tz = buoyb_tz) &
-                                 . != '' ~ paste0(., ', f'),
-                               TRUE ~ .))
+hist(buoy2021b_wq_L1$chla_stdev)
+
 
 # plot monthly
 for(i in 1:length(months)) {
   chunk <- buoy2021b_wq_L1 %>% 
     filter(datetime >= as.POSIXct(months[i], tz= buoyb_tz) &
              datetime < (as.POSIXct(months[i], tz=buoyb_tz) + dmonths(1)))
-  ggplot(chunk, aes(x = datetime, y = BGAPC_RFU, color = flag_bga)) +
+  ggplot(chunk, aes(x = datetime, y = BGAPC_RFU, color = flag_exobgarfu)) +
     geom_point() +
     scale_x_datetime(date_minor_breaks = '1 day') +
     final_theme +
@@ -474,7 +529,7 @@ for(i in 1:length(months)) {
          y = NULL,
          title = paste0('LSPA exo BGA ', format(months[i], '%B')))
   ggsave(filename = paste0('graphs/2021/L0p5_exobga_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
-  ggplot(chunk, aes(x = datetime, y = Chlor_RFU, color = flag_chla)) +
+  ggplot(chunk, aes(x = datetime, y = Chlor_RFU)) +
     geom_point() +
     scale_x_datetime(date_minor_breaks = '1 day') +
     final_theme +
@@ -484,9 +539,25 @@ for(i in 1:length(months)) {
   ggsave(filename = paste0('graphs/2021/L0p5_exochla_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
 }
 
+#add flag to last 3 days before cleaning as suspect
+clean_dt = as.POSIXct('2021-09-20 11:00:00', tz=buoyb_tz)
+buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
+  mutate(flag_exochlrfu = case_when(datetime >= clean_dt - days(3) & datetime < clean_dt & Chlor_RFU > 0.75 ~ 'sf',
+                                    TRUE ~ ''))
+
+#add flag to few days before removal as suspect
+removal = as.POSIXct('2021-10-19 08:30:00', tz = buoyb_tz)
+buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
+  mutate(flag_exochlrfu = case_when(datetime >=  removal - days(3) & datetime < removal & Chlor_RFU > 0.75 ~ 'sf',
+                                    TRUE ~ flag_exochlrfu))
+
+ggplot(buoy2021b_wq_L1, aes(x = datetime, y = Chlor_RFU, color = flag_exochlrfu)) +
+  geom_point() 
+
 #remove SD cols
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
   select(-BGA_stdev, -chla_stdev)
+
 
 ### fdom ----
 buoyb_fdom_vert <- buoy2021b_wq_L1 %>% 
@@ -516,10 +587,10 @@ for(i in 1:length(months)) {
 
 ### plot all data together monthly ----
 buoyb_exo_vert <- buoy2021b_wq_L1 %>% 
-  select(datetime, flag_exo, all_of(exo)) %>% 
+  select(datetime, flag_allexo, all_of(exo)) %>% 
   pivot_longer(names_to = 'variable',
                values_to = 'values', 
-               -c(datetime,flag_exo))
+               -c(datetime,flag_allexo))
 
 # plot monthly
 for(i in 1:length(months)) {
@@ -547,26 +618,26 @@ rm(buoyb_exo_vert, buoyb_fdom_vert, chunk, chunk_vert)
 
 ## DO ----
 buoy_do_vert <- buoy2021b_wq_L1 %>% 
-  select(datetime, flag_do, all_of(lowDO)) %>% 
+  select(datetime, flag_do10p5m, all_of(lowDO)) %>% 
   pivot_longer(names_to = 'variable', 
                values_to =  'value', 
-               -c(datetime,flag_do))
+               -c(datetime,flag_do10p5m))
 
 # recode where flagged
-unique(buoy2021b_wq_L1$flag_do) # all flags are out of water
+unique(buoy2021b_wq_L1$flag_do10p5m) # all flags are out of water
 
 #move low do to up do where flag == v
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(DOTempC = case_when(flag_do == 'v' & datetime > as.Date('2021-10-15') ~ DOLowTempC,
-                             TRUE ~ NA_real_),
-         DOSat = case_when(flag_do == 'v' & datetime > as.Date('2021-10-15') ~ DOLowSat,
-                           TRUE ~ NA_real_),
-         DOppm = case_when(flag_do == 'v' & datetime > as.Date('2021-10-15') ~ DOLowPPM,
-                   TRUE ~ NA_real_))
+  mutate(DOTempC_harbor = case_when(flag_do10p5m == 'v' & datetime > as.Date('2021-10-15') ~ DOLowTempC,
+                                    TRUE ~ NA_real_),
+         DOSat_harbor = case_when(flag_do10p5m == 'v' & datetime > as.Date('2021-10-15') ~ DOLowSat,
+                                  TRUE ~ NA_real_),
+         DOppm_harbor = case_when(flag_do10p5m == 'v' & datetime > as.Date('2021-10-15') ~ DOLowPPM,
+                                  TRUE ~ NA_real_))
 
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
   mutate_at(vars(all_of(lowDO)),
-            ~ case_when(flag_do != '' ~ NA_real_,
+            ~ case_when(flag_do10p5m != '' ~ NA_real_,
                         TRUE ~ .))
 
 #remove beginning of record
@@ -582,12 +653,12 @@ buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>%
                         TRUE ~ .))
 
 buoy_do_vert <- buoy2021b_wq_L1 %>% 
-  select(datetime, flag_do, all_of(lowDO)) %>% 
+  select(datetime, flag_do10p5m, all_of(lowDO)) %>% 
   pivot_longer(names_to = 'variable', 
                values_to =  'value', 
-               -c(datetime,flag_do))
+               -c(datetime,flag_do10p5m))
 
-ggplot(buoy_do_vert, aes(x = datetime, y = value, color = flag_do))+
+ggplot(buoy_do_vert, aes(x = datetime, y = value, color = flag_do10p5m))+
   geom_point()+
   facet_grid(variable ~., scales = 'free_y')
 
@@ -610,68 +681,108 @@ for(i in 1:length(months)) {
 #clean up workspace
 rm(buoy_do_vert, chunk)
 
-## Upper DO ----
+## Upper DO in harbor ----
+harbordo_vert <- buoy2021b_wq_L1 %>% 
+  select(datetime, DOSat_harbor, DOppm_harbor, DOTempC_harbor) %>% 
+  pivot_longer(names_to = 'variable', values_to = 'value', -datetime)
 
-# will qaqc this next round, in mean time truncate entire record at buoy move
+ggplot(harbordo_vert, aes(x = datetime, y = value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(minor_breaks = '1 month')
+
+# need to correct for beginning of record
+harbordo_vert %>% 
+  filter(datetime > as.POSIXct('2021-10-19', tz = buoyb_tz) & datetime < as.POSIXct('2021-10-20', tz = buoyb_tz)) %>% 
+  ggplot(., aes(x = datetime, y = value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(minor_breaks = '1 hour')
 
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  filter(datetime <= exo_eor)
+  mutate_at(vars(DOSat_harbor, DOppm_harbor, DOTempC_harbor),
+            ~case_when(datetime < as.POSIXct('2021-10-19 09:30', tz =buoyb_tz) ~ NA_real_,
+                       TRUE ~ .))
+harbordo_vert <- buoy2021b_wq_L1 %>% 
+  select(datetime, DOSat_harbor, DOppm_harbor, DOTempC_harbor) %>% 
+  pivot_longer(names_to = 'variable', values_to = 'value', -datetime)
 
+# plot to check
+harbordo_vert %>% 
+  filter(datetime > as.POSIXct('2021-10-19', tz = buoyb_tz) & datetime < as.POSIXct('2021-10-20', tz = buoyb_tz)) %>% 
+  ggplot(., aes(x = datetime, y = value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(minor_breaks = '1 hour')
+
+ggplot(harbordo_vert, aes(x = datetime, y = value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(minor_breaks = '1 month')
+
+#add location information
+buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
+  mutate(location = case_when(datetime >= exo_eor & datetime < as.POSIXct('2021-10-19 09:30', tz =buoyb_tz) ~ 'in transit',
+                              datetime >= as.POSIXct('2021-10-19 09:30', tz =buoyb_tz) ~ 'harbor', 
+                              TRUE ~ location))
+
+#double check location
+ggplot(buoy2021b_wq_L1, aes(x = datetime, y = location)) +
+  geom_point()
+
+#filter to loon and beyond only
+buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
+  filter(datetime > redeploy_exact)
 
 # 2021 Met data ----
 
-# recode before launch and add loction
+# filter data from launch
+buoy2021b_met_L1 <- buoy2021b_met_L1 %>% 
+  filter(datetime >= redeploy_exact) 
+
+# get location from wq data and apply to met
+first_loon = first(buoy2021b_wq_L1$datetime[buoy2021b_wq_L1$location == 'loon'])
+first_intransit = first(buoy2021b_wq_L1$datetime[buoy2021b_wq_L1$location == 'in transit'])
+first_harbor = first(buoy2021b_wq_L1$datetime[buoy2021b_wq_L1$location == 'harbor'])
+
+buoy2021b_met_L1 <- buoy2021b_met_L1 %>% 
+  mutate(location = case_when(datetime >= first_loon & datetime < first_intransit ~ 'loon',
+                              datetime >= first_intransit & datetime < first_harbor ~ 'in transit',
+                              datetime >= first_harbor ~ 'harbor',
+                              TRUE ~ ''))
+
+# recode when in transit
 buoy2021b_met_L1 <- buoy2021b_met_L1 %>% 
   mutate_at(all_of(met),
-            ~case_when(datetime <= redeploy_exact ~ NA_real_,
-                       TRUE ~ .)) %>% 
-  mutate(location = case_when(datetime > redeploy_exact ~ 'loon',
-                              TRUE ~ 'offline'))
+            ~ case_when(location == 'in transit' ~ NA_real_,
+                        TRUE ~ .))
 
-#truncate at end of exo record
+#look at flags
+unique(buoy2021b_met_L1$flag_allmet)
+
+#only r needs to be recoded - this is when the rh chip was changed
 buoy2021b_met_L1 <- buoy2021b_met_L1 %>% 
-  filter(datetime <= exo_eor)
+  mutate_at(all_of(met),
+            ~ case_when(flag_allmet == 'r' ~ NA_real_,
+                        TRUE ~ .))
 
-buoy_met_vert <- buoy2021b_met_L1 %>% 
-  select(datetime, all_of(met)) %>% 
-  pivot_longer(names_to = 'variable', 
-               values_to =  'value', 
-               -c(datetime))
 
-ggplot(buoy_met_vert, aes(x = datetime, y = value))+
-  geom_point()+
-  facet_grid(variable ~., scales = 'free_y')
-
-# plot monthly
-for(i in 1:length(months)) {
-  chunk <- buoy_met_vert %>% 
-    filter(datetime >= as.POSIXct(months[i], tz= buoyb_tz) &
-             datetime < (as.POSIXct(months[i], tz=buoyb_tz) + dmonths(1)))
-  ggplot(chunk, aes(x = datetime, y = value)) +
-    geom_point() +
-    facet_grid(variable ~ ., scales = 'free_y') +
-    scale_x_datetime(date_minor_breaks = '1 day') +
-    final_theme +
-    labs(x = NULL,
-         y = NULL,
-         title = paste0('LSPA buoy met ', format(months[i], '%B')))
-  ggsave(filename = paste0('graphs/2021/L0_met_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
-}
+#plotting all of the met data at same time takes too long - only plot by data group
 
 ## air temp and rel hum ----
 
 buoy_temp_vert <- buoy2021b_met_L1 %>% 
-  select(datetime, all_of(air)) %>% 
+  select(datetime, all_of(air), location) %>% 
   pivot_longer(names_to = 'variable', 
                values_to =  'value', 
-               -c(datetime))
+               -c(datetime, location))
 
 # plot monthly
 for(i in 1:length(months)) {
   chunk <- buoy_temp_vert %>% 
     filter(datetime >= as.POSIXct(months[i], tz= buoyb_tz) &
              datetime < (as.POSIXct(months[i], tz=buoyb_tz) + dmonths(1)))
-  ggplot(chunk, aes(x = datetime, y = value)) +
+  ggplot(chunk, aes(x = datetime, y = value, color = location)) +
     geom_point() +
     facet_grid(variable ~ ., scales = 'free_y') +
     scale_x_datetime(date_minor_breaks = '1 day') +
@@ -682,20 +793,21 @@ for(i in 1:length(months)) {
   ggsave(filename = paste0('graphs/2021/L0_airRH_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
 }
 
-## wind ----
+#data look good
 
+## wind ----
 buoy_wind_vert <- buoy2021b_met_L1 %>% 
-  select(datetime, all_of(wind)) %>% 
+  select(datetime, all_of(wind), location) %>% 
   pivot_longer(names_to = 'variable', 
                values_to =  'value', 
-               -c(datetime))
+               -c(datetime, location))
 
 # plot monthly
 for(i in 1:length(months)) {
   chunk <- buoy_wind_vert %>% 
     filter(datetime >= as.POSIXct(months[i], tz= buoyb_tz) &
              datetime < (as.POSIXct(months[i], tz=buoyb_tz) + dmonths(1)))
-  ggplot(chunk, aes(x = datetime, y = value)) +
+  ggplot(chunk, aes(x = datetime, y = value, color = location)) +
     geom_point() +
     facet_grid(variable ~ ., scales = 'free_y') +
     scale_x_datetime(date_minor_breaks = '1 day') +
@@ -706,21 +818,67 @@ for(i in 1:length(months)) {
   ggsave(filename = paste0('graphs/2021/L0_wind_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
 }
 
+#sensor frozen nov 26- nov29
+buoy2021b_met_L1 <- buoy2021b_met_L1 %>% 
+  mutate_at(all_of(wind),
+            ~case_when(datetime >= as.POSIXct('2021-11-26', tz = buoyb_tz) &
+                         datetime < as.POSIXct('2021-11-30', tz = buoyb_tz) &
+                         MaxWindSp == 0 ~ NA_real_, 
+                       TRUE ~ .))
 
-## PAR ----
+#sensor frozen dec 25- dec29
+buoy2021b_met_L1 <- buoy2021b_met_L1 %>% 
+  mutate_at(all_of(wind),
+            ~case_when(datetime >= as.POSIXct('2021-12-25', tz = buoyb_tz) &
+                         datetime < as.POSIXct('2021-12-30', tz = buoyb_tz) &
+                         MaxWindSp == 0 ~ NA_real_, 
+                       TRUE ~ .))
 
-buoy_par_vert <- buoy2021b_met_L1 %>% 
-  select(datetime, all_of(par2021)) %>% 
+buoy_wind_vert <- buoy2021b_met_L1 %>% 
+  select(datetime, all_of(wind), location) %>% 
   pivot_longer(names_to = 'variable', 
                values_to =  'value', 
-               -c(datetime))
+               -c(datetime, location))
+
+# plot monthly
+for(i in 1:length(months)) {
+  chunk <- buoy_wind_vert %>% 
+    filter(datetime >= as.POSIXct(months[i], tz= buoyb_tz) &
+             datetime < (as.POSIXct(months[i], tz=buoyb_tz) + dmonths(1)))
+  ggplot(chunk, aes(x = datetime, y = value, color = location)) +
+    geom_point() +
+    facet_grid(variable ~ ., scales = 'free_y') +
+    scale_x_datetime(date_minor_breaks = '1 day') +
+    final_theme +
+    labs(x = NULL,
+         y = NULL,
+         title = paste0('LSPA buoy wind ', format(months[i], '%B')))
+  ggsave(filename = paste0('graphs/2021/L1_wind_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+}
+
+## PAR ----
+range(buoy2021b_met_L1$PAR_ave_umolpspm2, na.rm = T)
+range(buoy2021b_met_L1$PAR_tot_mmolpm2, na.rm = T)
+
+buoy_par_vert <- buoy2021b_met_L1 %>% 
+  select(datetime, all_of(par2021), location) %>% 
+  pivot_longer(names_to = 'variable', 
+               values_to =  'value', 
+               -c(datetime, location))
+
+ggplot(buoy_par_vert, aes(x = datetime, y = value, color = location)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 month') +
+  final_theme 
+
 
 # plot monthly
 for(i in 1:length(months)) {
   chunk <- buoy_par_vert %>% 
     filter(datetime >= as.POSIXct(months[i], tz= buoyb_tz) &
              datetime < (as.POSIXct(months[i], tz=buoyb_tz) + dmonths(1)))
-  ggplot(chunk, aes(x = datetime, y = value)) +
+  ggplot(chunk, aes(x = datetime, y = value, color = location)) +
     geom_point() +
     facet_grid(variable ~ ., scales = 'free_y') +
     scale_x_datetime(date_minor_breaks = '1 day') +
@@ -731,60 +889,132 @@ for(i in 1:length(months)) {
   ggsave(filename = paste0('graphs/2021/L0_PAR_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
 }
 
-# still have par >0 at night issue. flagging all PAR data 
+#looks like sensor obscured end of nov and end-mid dec
+
+#nov 27- nov 30
+#dec 25- 28
 
 buoy2021b_met_L1 <- buoy2021b_met_L1 %>% 
-  mutate(flag_PAR = case_when(!is.na(PAR_tot_mmolpm2) ~ 'n',
+  mutate(flag_par = case_when(datetime >= as.POSIXct('2021-11-27', tz =buoyb_tz) &
+                                datetime <= as.POSIXct('2021-12-01', tz = buoyb_tz) ~ 'o', 
+                              datetime >= as.POSIXct('2021-12-25', tz =buoyb_tz) &
+                                datetime <= as.POSIXct('2021-12-29', tz = buoyb_tz) ~ 'o', 
                               TRUE ~ ''))
 
+# still have par >0 at night issue. flagging all PAR data 
+buoy2021b_met_L1 <- buoy2021b_met_L1 %>% 
+  mutate(flag_par = case_when(flag_par == '' ~ 'n',
+                              TRUE ~ paste0('n; ', flag_par)))
+
+buoy_par_vert <- buoy2021b_met_L1 %>% 
+  select(datetime, all_of(par2021), location, flag_par) %>% 
+  pivot_longer(names_to = 'variable', 
+               values_to =  'value', 
+               -c(datetime, location, flag_par))
+
+# plot monthly
+for(i in 1:length(months)) {
+  chunk <- buoy_par_vert %>% 
+    filter(datetime >= as.POSIXct(months[i], tz= buoyb_tz) &
+             datetime < (as.POSIXct(months[i], tz=buoyb_tz) + dmonths(1)))
+  ggplot(chunk, aes(x = datetime, y = value, color = flag_par, shape = location)) +
+    geom_point() +
+    facet_grid(variable ~ ., scales = 'free_y') +
+    scale_x_datetime(date_minor_breaks = '1 day') +
+    final_theme +
+    labs(x = NULL,
+         y = NULL,
+         title = paste0('LSPA buoy PAR ', format(months[i], '%B')))
+  ggsave(filename = paste0('graphs/2021/L1_PAR_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+}
+
+# Convert to CV ----
+colnames(buoy2021b_wq_L1)
+buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
+  rename(waterTemperature_degC_0p1m = TempC_0m,
+         waterTemperature_degC_1m = TempC_1m,
+         waterTemperature_degC_2m = TempC_2m,
+         waterTemperature_degC_3m = TempC_3m,
+         waterTemperature_degC_4m = TempC_4m,
+         waterTemperature_degC_5m = TempC_5m,
+         waterTemperature_degC_6m = TempC_6m,
+         waterTemperature_degC_7m = TempC_7m,
+         waterTemperature_degC_8m = TempC_8m,
+         waterTemperature_degC_9m = TempC_9m,
+         waterTemperature_degC_10m = TempC_10m,
+         oxygenDissolved_mgl_1m = DOppm,
+         oxygenDissolvedPercentOfSaturation_pct_1m = DOSat,
+         waterTemperature_EXO_degC_1m = EXOTempC,
+         fluorescenceDissolvedOrganicMatter_RFU_1m = fDOM_RFU,
+         blue_GreenAlgae_Cyanobacteria_Phycocyanin_RFU_1m = BGAPC_RFU,
+         chlorophyllFluorescence_RFU_1m = Chlor_RFU,
+         solidsTotalDissolved_mgl_1m = TDS_mgl,
+         electricalConductivity_mScm_1m = Cond,
+         specificConductance_mScm_1m = SpecCond,
+         oxygenDissolved_mgl_0p75m = DOppm_harbor,
+         oxygenDissolvedPercentOfSaturation_pct_0p75m = DOSat_harbor,
+         waterTemperature_DO_degC_0p75m = DOTempC_harbor,
+         oxygenDissolved_mgl_10m = DOLowPPM,
+         oxygenDissolvedPercentOfSaturation_pct_10m = DOLowSat,
+         waterTemperature_DO_degC_10m = DOLowTempC)
+
+colnames(buoy2021b_met_L1)
+buoy2021b_met_L1 <- buoy2021b_met_L1 %>% 
+  rename(winddirectionInstantaneous_deg = WindDir,
+         windDirectionAverage_deg = AveWindDir,
+         windSpeedAverage_mps = AveWindSp,
+         windGustDirection_deg = MaxWindDir,
+         windGustSpeed_mps = MaxWindSp,
+         relativeHumidity_perc = RelHum,
+         airTemperature_degC = AirTempC,
+         radiationIncomingPARTotal_mmolm2 = PAR_tot_mmolpm2,
+         radiationIncomingPARAverage_mmolm2s = PAR_ave_umolpspm2)
 
 
 # EXPORT L1 DATA STREAMS ----
 
 ## Water Quality data ----
-colnames(buoy2021b_wq_L1)
 
 #export L1 tempstring file
-unique(buoy2021b_wq_L1$flag_temp)
 buoy2021b_wq_L1 %>%
-  select(datetime, all_of(all_temp), location, flag_temp) %>%
+  select(datetime, waterTemperature_degC_0p1m:waterTemperature_degC_10m, location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/tempstring/2021_tempstring_L1_corrdepths.csv')
+  write_csv(., file.path(dump_dir, 'tempstring/2021_tempstring_L1_v2022.csv'))
 
 #export l1 exo file
-unique(buoy2021b_wq_L1$flag_exo)
-unique(buoy2021b_wq_L1$flag_chla)
-unique(buoy2021b_wq_L1$flag_bga)
+unique(buoy2021b_wq_L1$flag_exochlrfu)
+unique(buoy2021b_wq_L1$flag_exobgarfu)
+
 buoy2021b_wq_L1 %>%
-  select(datetime, all_of(exoinfo), all_of(exo), flag_exo, flag_chla, flag_bga, location) %>%
+  select(datetime, 
+         waterTemperature_EXO_degC_1m:chlorophyllFluorescence_RFU_1m, 
+         blue_GreenAlgae_Cyanobacteria_Phycocyanin_RFU_1m,
+         fluorescenceDissolvedOrganicMatter_RFU_1m,
+         flag_exochlrfu, flag_exobgarfu, 
+         location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/2021_do_L1.csv')
+  write_csv(., file.path(dump_dir, 'exo/2021_exo_L1_v2022.csv'))
 
 #export l1 do file
 buoy2021b_wq_L1 %>%
-  select(datetime, all_of(upDO), all_of(lowDO), upper_do_flag, lower_do_flag, location) %>%
+  select(datetime, 
+         waterTemperature_DO_degC_0p75m:oxygenDissolved_mgl_0p75m,
+         waterTemperature_DO_degC_10m:oxygenDissolved_mgl_10m,
+         flag_do10p5m, 
+         location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/2021_do_L1.csv')
+  write_csv(., file.path(dump_dir, 'do/2021_do_L1_v2022.csv'))
 
 
 ## Met Data ----
 colnames(buoy2021b_met_L1)
 
-#export l1 par file
-buoy2021_L1 %>%
-  select(datetime, all_of(par2021), PAR_flag, location) %>%
+#export l1 met file
+buoy2021b_met_L1 %>%
+  select(datetime, 
+         airTemperature_degC, relativeHumidity_perc,
+         radiationIncomingPARAverage_mmolm2s, radiationIncomingPARTotal_mmolm2, flag_par,
+         winddirectionInstantaneous_deg:windDirectionAverage_deg,
+         location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2021_PAR_L1.csv')
-
-#export l1 wind
-buoy2021_L1 %>%
-  select(datetime, all_of(wind2021), location) %>%
-  mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2021_wind_L1.csv')
-
-#export l1 air temp file
-buoy2021_L1 %>%
-  select(datetime, AirTempC, location) %>%
-  mutate(datetime = as.character(datetime)) %>%
-  write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/met/2021_airtemp_L1.csv')
-
+  write_csv(., file.path(dump_dir, 'met/2021b_met_L1_v2022.csv'))
