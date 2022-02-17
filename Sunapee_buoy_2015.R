@@ -714,6 +714,12 @@ buoy2015_L1 <- buoy2015_L1 %>%
          oxygenDissolvedPercentOfSaturation_pct_10p5m = DOLowSat,
          waterTemperature_DO_degC_10p5m = DOLowTempC)
 
+# recode offset values where raw values have been recoded
+buoy2014_L1 <- buoy2014_L1 %>% 
+  mutate(oxygenDissolved_mgl_1p5m_withoffval = case_when(is.na(oxygenDissolved_mgl_1p5m) ~ NA_real_,
+                                                         TRUE ~ oxygenDissolved_mgl_1p5m_withoffval),
+         oxygenDissolvedPercentOfSaturation_pct_1p5m_withoffval = case_when(is.na(oxygenDissolvedPercentOfSaturation_pct_1p5m) ~ NA_real_,
+                                                                            TRUE ~ oxygenDissolvedPercentOfSaturation_pct_1p5m_withoffval))
 
 rm(buoy2015_vert_do, buoy2015_vert_do_L1, buoy2015_vert_updo, buoy2015_vert_lowdo)
 

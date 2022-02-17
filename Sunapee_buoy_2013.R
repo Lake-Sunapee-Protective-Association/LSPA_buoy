@@ -747,6 +747,17 @@ buoy2013_L1 <- buoy2013_L1 %>%
          oxygenDissolvedPercentOfSaturation_pct_10p5m = DOLowSat,
          waterTemperature_DO_degC_10p5m = DOLowTempC)
 
+# recode offset values where raw values have been recoded
+buoy2013_L1 <- buoy2013_L1 %>% 
+  mutate(oxygenDissolved_mgl_1p5m_withoffval = case_when(is.na(oxygenDissolved_mgl_1p5m) ~ NA_real_,
+                                                         TRUE ~ oxygenDissolved_mgl_1p5m_withoffval),
+         oxygenDissolved_mgl_10p5m_withoffval = case_when(is.na(oxygenDissolved_mgl_10p5m) ~ NA_real_,
+                                                         TRUE ~ oxygenDissolved_mgl_10p5m_withoffval),
+         oxygenDissolvedPercentOfSaturation_pct_1p5m_withoffval = case_when(is.na(oxygenDissolvedPercentOfSaturation_pct_1p5m) ~ NA_real_,
+                                                                            TRUE ~ oxygenDissolvedPercentOfSaturation_pct_1p5m_withoffval),
+         oxygenDissolvedPercentOfSaturation_pct_10p5m_withoffval = case_when(is.na(oxygenDissolvedPercentOfSaturation_pct_10p5m) ~ NA_real_,
+                                                                            TRUE ~ oxygenDissolvedPercentOfSaturation_pct_10p5m_withoffval))
+
 
 #### column issues ####
 #with addition of sensors, columns off. need to split file and rejoin with proper column names

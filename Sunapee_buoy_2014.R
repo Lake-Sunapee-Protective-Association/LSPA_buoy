@@ -387,7 +387,6 @@ ggplot(buoy2014_vert_do,
   final_theme +
   scale_x_datetime(date_minor_breaks = '1 month')
 
-
 # ggplot(subset(buoy2014_vert_do,
 #               subset = (datetime>= as.POSIXct('2014-01-01', tz=buoy_tz) & datetime < as.POSIXct('2014-02-01', tz=buoy_tz))),
 #        aes(x=datetime, y=value)) +
@@ -665,6 +664,7 @@ buoy2014_L1 <- buoy2014_L1 %>%
             ~ case_when(datetime == as.POSIXct('2014-09-18 15:50', tz= buoy_tz) ~ NA_real_,
                         TRUE ~ .))
 
+
 # add offset amount from logger at start of data recording
 shalsat2 = -20
 shalppm2 = -2
@@ -678,9 +678,9 @@ buoy2014_L1 <- buoy2014_L1 %>%
                                       TRUE ~ offval_do1p5_sat)) %>% 
   #copy data from program to new column during offset period
   mutate(oxygenDissolved_mgl_1p5m_withoffval = case_when(datetime >= as.POSIXct('2014-09-18 16:00', tz=buoy_tz)~ DOppm,
-                                                         TRUE ~ NA_real_),
+                                                         TRUE ~ oxygenDissolved_mgl_1p5m_withoffval),
          oxygenDissolvedPercentOfSaturation_pct_1p5m_withoffval = case_when(datetime >= as.POSIXct('2014-09-18 16:00', tz=buoy_tz) ~ DOSat,
-                                                                            TRUE ~ NA_real_)) %>% 
+                                                                            TRUE ~ oxygenDissolvedPercentOfSaturation_pct_1p5m_withoffval)) %>% 
   #add flags for calculated from offset
   mutate(flag_do1p5m = case_when(datetime >= as.POSIXct('2014-09-18 16:00', tz=buoy_tz) ~ 'o',
                                  TRUE ~ flag_do1p5m)) %>%
@@ -689,13 +689,6 @@ buoy2014_L1 <- buoy2014_L1 %>%
                            TRUE~DOppm),
          DOSat = case_when(flag_do1p5m == 'o' ~ oxygenDissolvedPercentOfSaturation_pct_1p5m_withoffval - offval_do1p5_sat,
                            TRUE~DOSat))
-
-buoy2014_vert_do_L1 <- buoy2014_L1 %>%
-  select(datetime, all_of(upDO), all_of(lowDO)) %>%
-  pivot_longer(names_to = 'variable', values_to = 'value', -datetime)
-
-
-
 
 buoy2014_L1 <- buoy2014_L1 %>% 
   mutate(upper_do_flag = case_when(datetime >= as.POSIXct('2014-07-28 10:00', tz=buoy_tz) & datetime < as.POSIXct('2014-09-18 16:00', tz=buoy_tz) ~ 'm',
@@ -830,7 +823,7 @@ buoy2014_L1 <- buoy2014_L1 %>%
 
 #add flag for no calibration on record
 buoy2014_L1 <- buoy2014_L1 %>% 
-  mutate(vars(flag_do1p5m, flag_do10p5m),
+  mutate_at(vars(flag_do1p5m, flag_do10p5m),
          ~ case_when(. == '' ~ 'x',
                      . != '' ~ paste('x', ., sep = '; ')))
 
@@ -845,6 +838,16 @@ buoy2014_L1 <- buoy2014_L1 %>%
          oxygenDissolvedPercentOfSaturation_pct_10p5m = DOLowSat,
          waterTemperature_DO_degC_10p5m = DOLowTempC)
 
+# recode offset values where raw values have been recoded
+buoy2014_L1 <- buoy2014_L1 %>% 
+  mutate(oxygenDissolved_mgl_1p5m_withoffval = case_when(is.na(oxygenDissolved_mgl_1p5m) ~ NA_real_,
+                                                         TRUE ~ oxygenDissolved_mgl_1p5m_withoffval),
+         oxygenDissolved_mgl_10p5m_withoffval = case_when(is.na(oxygenDissolved_mgl_10p5m) ~ NA_real_,
+                                                          TRUE ~ oxygenDissolved_mgl_10p5m_withoffval),
+         oxygenDissolvedPercentOfSaturation_pct_1p5m_withoffval = case_when(is.na(oxygenDissolvedPercentOfSaturation_pct_1p5m) ~ NA_real_,
+                                                                            TRUE ~ oxygenDissolvedPercentOfSaturation_pct_1p5m_withoffval),
+         oxygenDissolvedPercentOfSaturation_pct_10p5m_withoffval = case_when(is.na(oxygenDissolvedPercentOfSaturation_pct_10p5m) ~ NA_real_,
+                                                                             TRUE ~ oxygenDissolvedPercentOfSaturation_pct_10p5m_withoffval))
 
 #### PAR ####
 
