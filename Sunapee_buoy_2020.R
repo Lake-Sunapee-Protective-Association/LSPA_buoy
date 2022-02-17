@@ -1404,6 +1404,19 @@ unique(buoy2020_L1$location)
 #### EXPORT L1 DATA STREAMS ####
 colnames(buoy2020_L1)
 
+#make sure data are recoded during offline/in transit period
+buoy2020_L1 <- buoy2020_L1 %>% 
+  mutate_at(vars(waterTemperature_degC_0p75m:waterTemperature_degC_9p75m,
+            oxygenDissolved_mgl_1p5m,oxygenDissolvedPercentOfSaturation_pct_1p5m, waterTemperature_DO_degC_1p5m,
+            windDirectionInstantaneous_deg, windSpeedInstantaneous_mps,
+            windDirectionAverage_deg, windSpeedAverage_mps, 
+            radiationIncomingPAR_umolm2s,
+            airTemperature_degC),
+            ~ case_when(location == 'offline' ~ NA_real_,
+            location == 'in transit' ~ NA_real_,
+            TRUE ~ .)))
+
+
 #export L1 tempstring file
 buoy2020_L1 %>%
   select(datetime, location, waterTemperature_degC_0p75m:waterTemperature_degC_9p75m, flag_temp_0p75m) %>%
