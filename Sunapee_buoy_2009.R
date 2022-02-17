@@ -682,8 +682,6 @@ buoy2009_L1 <- buoy2009_L1 %>%
          waterTemperature_degC_0p5m = TempC_0m)
 
 
-
-
 #### DO sensors ####
 range(buoy2009_L1$DOSat, na.rm=T)
 range(buoy2009_L1$DOppm, na.rm=T)
@@ -1473,6 +1471,18 @@ buoy2009_L1 <- buoy2009_L1 %>%
 
 #### EXPORT L1 FILES ####
 colnames(buoy2009_L1)
+
+#make sure data are recoded during offline/in transit period
+buoy2009_L1 <- buoy2009_L1 %>% 
+  mutate_at(vars(waterTemperature_degC_0p5m:waterTemperature_degC_13p5m,
+            oxygenDissolved_mgl_1p5m,oxygenDissolvedPercentOfSaturation_pct_1p5m, waterTemperature_DO_degC_1p5m,
+            windDirectionInstantaneous_deg, windSpeedInstantaneous_mps,
+            windDirectionAverage_deg, windSpeedAverage_mps, 
+            radiationIncomingPAR_umolm2s,
+            airTemperature_degC),
+            ~ case_when(location == 'offline' ~ NA_real_,
+                        location == 'in transit' ~ NA_real_,
+                        TRUE ~ .))
 
 #export L1 tempstring file
 buoy2009_L1 %>%
