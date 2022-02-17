@@ -84,7 +84,8 @@ buoy2021b_wq_L1 <- buoy2021b_wq_L1[buoy2021b_wq_L1$rowid_wq != 27532,] #remove t
 
 # get list of all datetimes from start of this record to end
 first_time <- first(buoy2021b_wq_L1$datetime)
-alltimes_2021 <- as.data.frame(seq.POSIXt(as.POSIXct(first_time, tz=buoya_tz), as.POSIXct('2021-12-31 23:50', tz=buoya_tz), '10 min')) %>%
+alltimes_2021 <- as.data.frame(seq.POSIXt(as.POSIXct(first_time, tz=buoyb_tz), 
+                                          as.POSIXct('2021-12-31 23:50', tz=buoyb_tz), '10 min')) %>%
   rename("datetime" = !!names(.[1])) %>% 
   rowid_to_column('index')
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>%
@@ -155,11 +156,11 @@ logb <- logb %>%
 # add flags to log
 logb <- logb %>% 
   mutate(flag = case_when(grepl('clean', notes, ignore.case = T) & 
-                            (instrument == 'EXO' | instrument == 'do') ~ 'w', #clean flag
+                            (instrument == 'EXO' | instrument == 'do' | instrument == 'DO') ~ 'w', #clean flag
                           grepl('calibrate', notes, ignore.case = T) &
-                            (instrument == 'EXO' | instrument == 'do') ~ 'c', #calibrate flag
+                            (instrument == 'EXO' | instrument == 'do'| instrument == 'DO') ~ 'c', #calibrate flag
                           grepl('sensor cap', notes, ignore.case = T) &
-                            (instrument == 'EXO' | instrument == 'do') ~ 'r', #sensor cap change flag
+                            (instrument == 'EXO' | instrument == 'do'| instrument == 'DO') ~ 'r', #sensor cap change flag
                           grepl('removed', notes, ignore.case = T) ~ 'R', #sensor removal
                           grepl('move', notes, ignore.case = T) ~ 'v',
                           grepl('RH', notes, ignore.case = T) ~ 'r',
@@ -181,7 +182,7 @@ ggplot(buoy2021b_wq_L1, aes(x = datetime, y = EXO_batt_V)) +
 #add flags from log
 #initiate columns for wq file
 buoy2021b_wq_L1$flag_allexo = ''
-buoy2021b_wq_L1$flag_do10p5m = ''
+buoy2021b_wq_L1$flag_do10m = ''
 buoy2021b_wq_L1$flag_alltemp = ''
 
 for(l in 1:nrow(logb)){
@@ -192,9 +193,9 @@ for(l in 1:nrow(logb)){
                                      TRUE ~ flag_allexo))
   } else if (logb$instrument[l] == 'do' | logb$instrument[l] == 'DO') {
     buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-      mutate(flag_do10p5m = case_when(datetime >= logb$TIMESTAMP_start[l] &
+      mutate(flag_do10m = case_when(datetime >= logb$TIMESTAMP_start[l] &
                                         datetime <= logb$TIMESTAMP_end[l] ~ logb$flag[l], 
-                                      TRUE ~ flag_do10p5m))
+                                      TRUE ~ flag_do10m))
   } else if (logb$instrument[l] == 'temp') {
     buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
       mutate(flag_alltemp = case_when(datetime >= logb$TIMESTAMP_start[l] &
@@ -326,6 +327,7 @@ rm(buoyb_therm_vert)
 ## exo ----
 #recode as necessary from log
 unique(buoy2021b_wq_L1$flag_allexo)
+
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
   mutate_at(vars(all_of(exo), all_of(exoinfo)),
             ~ case_when(flag_allexo != '' ~ NA_real_,# all flags should be recoded
@@ -352,7 +354,7 @@ ggplot(buoyb_exo_vert, aes(x = datetime, y = values, shape = flag_allexo)) +
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
   mutate_at(vars(all_of(exo), all_of(exoinfo)),
             ~ case_when(datetime < as.POSIXct('2021-06-30 10:30:00', tz=buoyb_tz) ~ NA_real_,
-                        TRUE ~ .))
+                        TRUE ~ .)) 
 
 #plot exodepth to see if there are artifacts of maintenece
 ggplot(buoy2021b_wq_L1, aes(x = datetime, y = EXO_depth_m)) +
@@ -426,15 +428,28 @@ buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>%
             ~ case_when(datetime < doerr_date ~ NA_real_,
                         TRUE ~ .))
 
+#add clean and calibrate for do (calibration only pertinent to do)
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
   mutate(flag_exodo = case_when(flag_allexo == 'c' ~ 'c', 
                                 flag_allexo == 'w' ~ 'w',
                                 TRUE ~ '')) 
 
-# flag algae for bdl; no calibration on record
+exo_cal_datetime = as.POSIXct('2021-06-30 10:30:00', tz = buoyb_tz)
+#add calibration at beginning of season
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(flag_exobgarfu = case_when(BGAPC_RFU < 0 ~ 'z',
-                                    TRUE ~ '')) 
+  mutate(flag_exodo = case_when(datetime == exo_cal_datetime ~ 'c', 
+                                TRUE ~ flag_exodo))
+                                
+
+# flag algae for bdl;
+buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
+  mutate(flag_exobga = case_when(BGAPC_RFU < 0 ~ 'z',
+                                    TRUE ~ ''),
+         flag_exobga = case_when(flag_exobga == '' & datetime == exo_cal_datetime ~ 'c',
+                                    flag_exobga != '' & datetime == exo_cal_datetime ~ paste0('c; ', flag_exobga),
+                                    flag_exobga == '' & flag_allexo == 'w' ~ 'w',
+                                    flag_exobga != '' & flag_allexo == 'w' ~ paste0('w; ', flag_exobga),
+                                    TRUE ~ flag_exobga))
 
 # drop bgapc ugl
 buoy2021b_wq_L1$BGAPC_UGL = NA_real_
@@ -470,11 +485,11 @@ ggplot(buoy2021b_wq_L1, aes(x = datetime, y = BGAPC_RFU, color = BGA_stdev)) +
 hist(buoy2021b_wq_L1$BGA_stdev)
 
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(flag_exobgarfu = case_when(flag_exobgarfu == '' & BGA_stdev > 0.06 ~ 's',
-                                    flag_exobgarfu != '' & BGA_stdev > 0.06 ~ paste0(flag_exobgarfu, '; s'),
-                                    TRUE ~ flag_exobgarfu))
+  mutate(flag_exobga = case_when(flag_exobga == '' & BGA_stdev > 0.06 ~ 's',
+                                    flag_exobga != '' & BGA_stdev > 0.06 ~ paste0('s; ', flag_exobga),
+                                    TRUE ~ flag_exobga))
 
-ggplot(buoy2021b_wq_L1, aes(x = datetime, y = BGAPC_RFU, color = BGA_stdev, shape = flag_exobgarfu)) +
+ggplot(buoy2021b_wq_L1, aes(x = datetime, y = BGAPC_RFU, color = BGA_stdev, shape = flag_exobga)) +
   geom_point()
 
 ### chla ----
@@ -521,7 +536,7 @@ for(i in 1:length(months)) {
   chunk <- buoy2021b_wq_L1 %>% 
     filter(datetime >= as.POSIXct(months[i], tz= buoyb_tz) &
              datetime < (as.POSIXct(months[i], tz=buoyb_tz) + dmonths(1)))
-  ggplot(chunk, aes(x = datetime, y = BGAPC_RFU, color = flag_exobgarfu)) +
+  ggplot(chunk, aes(x = datetime, y = BGAPC_RFU, color = flag_exobga)) +
     geom_point() +
     scale_x_datetime(date_minor_breaks = '1 day') +
     final_theme +
@@ -542,21 +557,32 @@ for(i in 1:length(months)) {
 #add flag to last 3 days before cleaning as suspect
 clean_dt = as.POSIXct('2021-09-20 11:00:00', tz=buoyb_tz)
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(flag_exochlrfu = case_when(datetime >= clean_dt - days(3) & datetime < clean_dt & Chlor_RFU > 0.75 ~ 'sf',
+  mutate(flag_exochl = case_when(datetime >= clean_dt - days(3) & datetime < clean_dt & Chlor_RFU > 0.75 ~ 'sf',
                                     TRUE ~ ''))
 
 #add flag to few days before removal as suspect
 removal = as.POSIXct('2021-10-19 08:30:00', tz = buoyb_tz)
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(flag_exochlrfu = case_when(datetime >=  removal - days(3) & datetime < removal & Chlor_RFU > 0.75 ~ 'sf',
-                                    TRUE ~ flag_exochlrfu))
+  mutate(flag_exochl = case_when(datetime >=  removal - days(3) & datetime < removal & Chlor_RFU > 0.75 ~ 'sf',
+                                    TRUE ~ flag_exochl))
 
-ggplot(buoy2021b_wq_L1, aes(x = datetime, y = Chlor_RFU, color = flag_exochlrfu)) +
+ggplot(buoy2021b_wq_L1, aes(x = datetime, y = Chlor_RFU, color = flag_exochl)) +
   geom_point() 
 
 #remove SD cols
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
   select(-BGA_stdev, -chla_stdev)
+
+# flag cleaning
+buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
+  mutate(flag_exochl = case_when(flag_exochl == '' & datetime == exo_cal_datetime ~ 'c',
+                           flag_exochl != '' & datetime == exo_cal_datetime ~ paste0('c; ', flag_exochl),
+                           flag_exochl == '' & flag_allexo == 'w' ~ 'w',
+                           flag_exochl != '' & flag_allexo == 'w' ~ paste0('w; ', flag_exochl),
+                           TRUE ~ flag_exochl))
+
+unique(buoy2021b_wq_L1$flag_exochl)
+
 
 
 ### fdom ----
@@ -584,6 +610,21 @@ for(i in 1:length(months)) {
          title = paste0('LSPA exo BGA ', format(months[i], '%B')))
   ggsave(filename = paste0('graphs/2021/L0p5_exofdom_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
 }
+
+buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
+  mutate(flag_exofdom = case_when(datetime == exo_cal_datetime ~ 'c',
+                                  flag_allexo == 'w' ~ 'w',
+                                    TRUE ~ ''))
+
+# add calibration flag for TDS and cond
+buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
+  mutate(flag_exotds = case_when(datetime == exo_cal_datetime ~ 'c',
+                                 flag_allexo == 'w' ~ 'w',
+                                 TRUE ~ ''),
+         flag_exocond = case_when(datetime == exo_cal_datetime ~ 'c',
+                                  flag_allexo == 'w' ~ 'w',
+                                  TRUE ~ ''))
+
 
 ### plot all data together monthly ----
 buoyb_exo_vert <- buoy2021b_wq_L1 %>% 
@@ -618,27 +659,32 @@ rm(buoyb_exo_vert, buoyb_fdom_vert, chunk, chunk_vert)
 
 ## DO ----
 buoy_do_vert <- buoy2021b_wq_L1 %>% 
-  select(datetime, flag_do10p5m, all_of(lowDO)) %>% 
+  select(datetime, flag_do10m, all_of(lowDO)) %>% 
   pivot_longer(names_to = 'variable', 
                values_to =  'value', 
-               -c(datetime,flag_do10p5m))
+               -c(datetime,flag_do10m))
 
 # recode where flagged
-unique(buoy2021b_wq_L1$flag_do10p5m) # all flags are out of water
+unique(buoy2021b_wq_L1$flag_do10m) # all flags are out of water
 
 #move low do to up do where flag == v
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
-  mutate(DOTempC_harbor = case_when(flag_do10p5m == 'v' & datetime > as.Date('2021-10-15') ~ DOLowTempC,
+  mutate(DOTempC_harbor = case_when(flag_do10m == 'v' & datetime > as.Date('2021-10-15') ~ DOLowTempC,
                                     TRUE ~ NA_real_),
-         DOSat_harbor = case_when(flag_do10p5m == 'v' & datetime > as.Date('2021-10-15') ~ DOLowSat,
+         DOSat_harbor = case_when(flag_do10m == 'v' & datetime > as.Date('2021-10-15') ~ DOLowSat,
                                   TRUE ~ NA_real_),
-         DOppm_harbor = case_when(flag_do10p5m == 'v' & datetime > as.Date('2021-10-15') ~ DOLowPPM,
+         DOppm_harbor = case_when(flag_do10m == 'v' & datetime > as.Date('2021-10-15') ~ DOLowPPM,
                                   TRUE ~ NA_real_))
 
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
   mutate_at(vars(all_of(lowDO)),
-            ~ case_when(flag_do10p5m != '' ~ NA_real_,
+            ~ case_when(flag_do10m != '' ~ NA_real_,
                         TRUE ~ .))
+
+#add flag for calibration prior to deploy in June
+buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
+  mutate(flag_do10m = case_when(datetime == redeploy_exact +minutes(10) ~ 'c',
+                                  TRUE ~ flag_do10m))
 
 #remove beginning of record
 buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
@@ -653,12 +699,12 @@ buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>%
                         TRUE ~ .))
 
 buoy_do_vert <- buoy2021b_wq_L1 %>% 
-  select(datetime, flag_do10p5m, all_of(lowDO)) %>% 
+  select(datetime, flag_do10m, all_of(lowDO)) %>% 
   pivot_longer(names_to = 'variable', 
                values_to =  'value', 
-               -c(datetime,flag_do10p5m))
+               -c(datetime,flag_do10m))
 
-ggplot(buoy_do_vert, aes(x = datetime, y = value, color = flag_do10p5m))+
+ggplot(buoy_do_vert, aes(x = datetime, y = value, color = flag_do10m))+
   geom_point()+
   facet_grid(variable ~., scales = 'free_y')
 
@@ -974,33 +1020,46 @@ buoy2021b_met_L1 <- buoy2021b_met_L1 %>%
 # EXPORT L1 DATA STREAMS ----
 
 ## Water Quality data ----
+colnames(buoy2021b_wq_L1)
+
 
 #export L1 tempstring file
+unique(buoy2021b_wq_L1$flag_alltemp) #these are fine to drop
 buoy2021b_wq_L1 %>%
   select(datetime, waterTemperature_degC_0p1m:waterTemperature_degC_10m, location) %>%
   mutate(datetime = as.character(datetime)) %>%
   write_csv(., file.path(dump_dir, 'tempstring/2021_tempstring_L1_v2022.csv'))
 
 #export l1 exo file
-unique(buoy2021b_wq_L1$flag_exochlrfu)
-unique(buoy2021b_wq_L1$flag_exobgarfu)
+unique(buoy2021b_wq_L1$flag_exochl)
+unique(buoy2021b_wq_L1$flag_exobga)
+unique(buoy2021b_wq_L1$flag_exofdom)
+unique(buoy2021b_wq_L1$flag_exocond)
 
 buoy2021b_wq_L1 %>%
   select(datetime, 
-         waterTemperature_EXO_degC_1m:chlorophyllFluorescence_RFU_1m, 
-         blue_GreenAlgae_Cyanobacteria_Phycocyanin_RFU_1m,
-         fluorescenceDissolvedOrganicMatter_RFU_1m,
-         flag_exochlrfu, flag_exobgarfu, 
+         waterTemperature_EXO_degC_1m:oxygenDissolved_mgl_1m, flag_exodo,
+         chlorophyllFluorescence_RFU_1m, flag_exochl,
+         blue_GreenAlgae_Cyanobacteria_Phycocyanin_RFU_1m, flag_exobga,
+         fluorescenceDissolvedOrganicMatter_RFU_1m, flag_exofdom,
+         solidsTotalDissolved_mgl_1m, flag_exotds,
+         electricalConductivity_mScm_1m,
+         specificConductance_mScm_1m, flag_exocond,
          location) %>%
   mutate(datetime = as.character(datetime)) %>%
   write_csv(., file.path(dump_dir, 'exo/2021_exo_L1_v2022.csv'))
 
 #export l1 do file
+unique(buoy2021b_wq_L1$flag_do10m)
+#recode v to '', not applicable to data
+buoy2021b_wq_L1 <- buoy2021b_wq_L1 %>% 
+  mutate(flag_do10m = case_when(flag_do10m == 'v' ~ '',
+                                TRUE ~ flag_do10m))
 buoy2021b_wq_L1 %>%
   select(datetime, 
          waterTemperature_DO_degC_0p75m:oxygenDissolved_mgl_0p75m,
          waterTemperature_DO_degC_10m:oxygenDissolved_mgl_10m,
-         flag_do10p5m, 
+         flag_do10m, 
          location) %>%
   mutate(datetime = as.character(datetime)) %>%
   write_csv(., file.path(dump_dir, 'do/2021_do_L1_v2022.csv'))
@@ -1009,10 +1068,18 @@ buoy2021b_wq_L1 %>%
 ## Met Data ----
 colnames(buoy2021b_met_L1)
 
+unique(buoy2021b_met_L1$flag_allmet)
+unique(buoy2021b_met_L1$flag_par)
+
+# apply the 'r' flag from all met to rh
+buoy2021b_met_L1 <- buoy2021b_met_L1 %>% 
+  mutate(flag_rh = case_when(flag_allmet == 'r' ~ 'r',
+                             TRUE ~ ''))
+
 #export l1 met file
 buoy2021b_met_L1 %>%
   select(datetime, 
-         airTemperature_degC, relativeHumidity_perc,
+         airTemperature_degC, relativeHumidity_perc, flag_rh,
          radiationIncomingPARAverage_mmolm2s, radiationIncomingPARTotal_mmolm2, flag_par,
          winddirectionInstantaneous_deg:windDirectionAverage_deg,
          location) %>%
