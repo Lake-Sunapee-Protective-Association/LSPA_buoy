@@ -1,0 +1,964 @@
+---
+title: "LSPA Buoy DO Visual History"
+author: "B. Steele"
+date: "2022-02-16"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+#set global options
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(fig.width = 8)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+
+#load libraries
+library(tidyverse)
+library(ggthemes)
+
+#store theme grom for ggplot
+final_theme=theme_bw() +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14,face="bold"),
+        plot.title=element_text(size=16, face='bold', hjust=0.5)) #save as a grom
+
+```
+
+
+```{r buoy data, include=FALSE}
+datadir = 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/do/'
+exodir = 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/exo/'
+
+do2007 <- read.csv(file.path(datadir, '2007_do_L1_v2022.csv')) %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location) %>% 
+  filter(buoy_location == 'loon')
+do2008 <- read.csv(file.path(datadir, '2008_do_L1_v2022.csv')) %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location) %>% 
+  filter(buoy_location == 'loon')
+do2009 <- read.csv(file.path(datadir, '2009_do_L1_v2022.csv'))  %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location)%>% 
+  filter(buoy_location == 'loon')
+do2010 <- read.csv(file.path(datadir, '2010_do_L1_v2022.csv'))  %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location)%>% 
+  filter(buoy_location == 'loon')
+do2011 <- read.csv(file.path(datadir, '2011_do_L1_v2022.csv'))  %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location)%>% 
+  filter(buoy_location == 'loon')
+do2012 <- read.csv(file.path(datadir, '2012_do_L1_v2022.csv'))  %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location)%>% 
+  filter(buoy_location == 'loon')
+do2013 <- read.csv(file.path(datadir, '2013_do_L1_v2022.csv')) %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location)%>% 
+  filter(buoy_location == 'loon')
+do2014 <- read.csv(file.path(datadir, '2014_do_L1_v2022.csv'))  %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location)%>% 
+  filter(buoy_location == 'loon')
+do2015 <- read.csv(file.path(datadir, '2015_do_L1_v2022.csv'))  %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location)%>% 
+  filter(buoy_location == 'loon')
+do2016 <- read.csv(file.path(datadir, '2016_do_L1_v2022.csv'))  %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location)%>% 
+  filter(buoy_location == 'loon')
+do2017 <- read.csv(file.path(datadir, '2017_do_L1_v2022.csv')) %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location)%>% 
+  filter(buoy_location == 'loon')
+do2018 <- read.csv(file.path(datadir, '2018_do_L1_v2022.csv')) %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location)%>% 
+  filter(buoy_location == 'loon')
+do2019 <- read.csv(file.path(datadir, '2019_do_L1_v2022.csv')) %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location)%>% 
+  filter(buoy_location == 'loon')
+do2020 <- read.csv(file.path(datadir, '2020_do_L1_v2022.csv'))  %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location)%>% 
+  filter(buoy_location == 'loon')
+do2021lower <- read.csv(file.path(datadir, '2021_do_L1_v2022.csv')) %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location)%>% 
+  filter(buoy_location == 'loon')
+do2021upper <- read.csv(file.path(exodir, '2021_exo_L1_v2022.csv')) %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location)%>% 
+  filter(buoy_location == 'loon')
+
+do2018hobo <- read.csv(file.path(datadir, '2018_hobodo_L1_v2022.csv'))  %>% 
+  mutate(datetime = as.POSIXct(datetime, tz = 'Etc/GMT+5'),
+         data_source = 'buoy') %>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log'))) %>% 
+  rename(buoy_location = location)%>% 
+  filter(buoy_location == 'loon')
+
+```
+
+
+```{r manual do measurements, include=FALSE}
+mando_dir = 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/manual_do/'
+mando = read.csv(file.path(mando_dir, 'manual_do_2007-2021_v2022-02-10.csv')) %>% 
+  rename(site = location) %>% 
+  mutate(datetime = as.POSIXct(date)) %>% 
+  mutate(year = format(as.Date(date), '%Y')) %>% 
+  mutate_at(vars(flag_domgl, flag_dopct),
+            ~case_when(grepl('may be calibration', .) ~ 'x',
+                       grepl('calibration issue', .) ~ 'high',
+                       grepl('low', .) ~ 'low',
+                       grepl('high', .) ~ 'high',
+                                TRUE ~ .))%>% 
+  mutate(data_source = factor(data_source, levels = c('buoy', 'LMP', 'operations log')))
+
+mando_2007 <-  mando %>% 
+  filter(year == 2007)
+
+mando_2008 <-  mando %>% 
+  filter(year == 2008)
+
+mando_2009 <-  mando %>% 
+  filter(year == 2009)
+
+mando_2010 <-  mando %>% 
+  filter(year == 2010)
+
+mando_2011 <-  mando %>% 
+  filter(year == 2011)
+
+mando_2012 <-  mando %>% 
+  filter(year == 2012)
+
+mando_2013 <-  mando %>% 
+  filter(year == 2013)
+
+mando_2014 <-  mando %>% 
+  filter(year == 2014)
+
+mando_2015 <-  mando %>% 
+  filter(year == 2015)
+
+mando_2016 <-  mando %>% 
+  filter(year == 2016)
+
+mando_2017 <-  mando %>% 
+  filter(year == 2017)
+
+mando_2018 <-  mando %>% 
+  filter(year == 2018)
+
+mando_2019 <-  mando %>% 
+  filter(year == 2019)
+
+mando_2020 <-  mando %>% 
+  filter(year == 2020)
+
+mando_2021 <-  mando %>% 
+  filter(year == 2021)
+```
+
+
+# Sunapee Buoy Dissolved Oxygen Offset Timeline   
+
+This script is designed to present the dissolved oxygen (DO) data from the Lake Sunapee Protective Association (LSPA) alongside manual DO measurements made at the buoy and/or site 210, a long term monitoring site (LMP) near the buoy location. This is meant to serve as a reference document to other researchers who intend to use the dissolved oxygen data from the LSPA buoy. For the purposes of this document, only buoy data recorded at the Loon Island location are presented in this overview.
+
+At the initial deployment mid-2010 of the buoy until 2016, the metadata record for the dissolved oxygen sensor had no mention of calibration of the unit. The shallow DO unit read at a noticeably higher concentration and percent saturation than the manually-recorded dissolved oxygen at nearby monitoring station 210 until a the buoy was re-deployed July 2009, after a data gap in the record to repair the buoy from overwinter damage. Dissolved oxygen data look more aligned until mid 2013, when the concentration and percent saturation were again noticeably higher than what was measured at site 210. 
+
+Towards the end of 2013, an offset was introduced at the level of the Campbell datalogger program in an attempt to correct for the difference between the manual DO measurements and the data recorded at the buoy. For details about how the offset was handled within this data package, review the document *Sunapee Buoy Data Logger DO Offset 2013-2015*. In this document we only presenst the __'raw data'__, that is the data that were recorded withoutan offset or that were back-calculated from an offset value. Note that these are not actual raw data precisely, but rather the most raw data we have available from the data logger. 
+
+Within this data package, we provide the manual DO record from both the neighboring LMP site 210 as well as any DO readings at the buoy as material for end-users to apply correction factors to the data. Especially in the early years of the buoy, when there was no calibration on record, some sort will be absolutely necessary for use/application of the DO data. Because there are many methods for calibration and correction, we provide the raw DO data and the manual DO data for users to choose their method of correction. This record is collated in the R script *buoy_manual_do_collation.r* and is comprised of data from the LMP record (Steele, et al. 2021) and measurements that were made at the buoy site.
+
+
+## Other LSPA Buoy data products
+
+In the Richardson, et al. 2020 data publication of the LSPA buoy data (EDI package ID 463) spans from 2007-2013. DO data runs 2007-2012. This data set was corrected for fouling and drift using a quadratic equation in an R script provided in the data package. This script references the manual DO measurements at site 210 as the calibration source and contains two methods for these types of corrections.
+
+
+## DO visual history
+
+Manual measurements made at site 210 are presented as gold symbols, measurements made at the buoy are light blue symbols in all figures. Manual DO measurements prior to 2009 are flagged with a flag of 'x' - the data prior to this point had a much larger range than data after 2009, so in this case 'x' implies that additional measurement error is likely for these data. 
+
+
+Flag defninitions:
+
+
+    x: no calibration on record
+
+    o: data back-calculated from offset values
+
+    wp: cleaning presumed (may not be visible at this level)
+    
+    w: sensor cleaned (may not be visible at this level)
+    
+    c: sensor calibrated (may not be visible at this level)
+    
+    i: data record is intermittent
+    
+    s: data are suspect
+    
+    sf: suspected sensor failure (2017 only)
+    
+    re: DO cap replacement, no calibration on record (2018 only)
+    
+
+Flags specific to the manual measurements:
+
+    high: do values are very high
+    
+    low: do values are very low
+    
+
+### 2007
+
+Shallow DO:
+```{r}
+mando_2007_up <- mando_2007 %>% 
+  filter(depth_m < 2) 
+
+ggplot(do2007, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p5m, color = data_source)) +
+   geom_point(data = mando_2007_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  geom_point() +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2007, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
+   geom_point(data = mando_2007_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  geom_point() +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+```
+
+
+
+### 2008
+
+Shallow DO:
+
+```{r}
+mando_2008_up <- mando_2008 %>% 
+  filter(depth_m < 2) 
+
+ggplot(do2008, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2008_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2008, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2008_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+```
+
+### 2009
+
+Shallow DO:
+
+```{r}
+mando_2009_up <- mando_2009 %>% 
+  filter(depth_m < 2) 
+
+ggplot(do2009, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2009_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2009, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2009_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+
+
+### 2010
+
+Shallow DO:
+
+```{r}
+mando_2010_up <- mando_2010 %>% 
+  filter(depth_m < 2) 
+
+ggplot(do2010, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2010_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2010, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2010_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+
+
+### 2011
+
+Shallow DO:
+
+```{r}
+mando_2011_up <- mando_2011 %>% 
+  filter(depth_m < 2) 
+
+ggplot(do2011, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2011_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2011, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2011_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+```
+
+
+### 2012
+
+Shallow DO:
+
+```{r}
+mando_2012_up <- mando_2012 %>% 
+  filter(depth_m < 2) 
+
+ggplot(do2012, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2012_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2012, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2012_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+
+
+### 2013
+
+First year with low do sensor
+
+Shallow DO:
+
+```{r}
+mando_2013_up <- mando_2013 %>% 
+  filter(depth_m < 2) 
+
+ggplot(do2013, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2013_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2013, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2013_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+```
+
+
+Deep DO:
+
+```{r}
+mando_2013_down <- mando_2013 %>% 
+  filter(depth_m >= 9 & depth_m <= 11) 
+
+ggplot(do2013, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2013_down, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2013, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2013_down, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+
+
+### 2014
+
+Shallow DO:
+
+```{r}
+mando_2014_up <- mando_2014 %>% 
+  filter(depth_m < 2) 
+
+ggplot(do2014, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2014_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2014, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2014_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+```
+
+
+Deep DO:
+
+```{r}
+mando_2014_down <- mando_2014 %>% 
+  filter(depth_m >= 9 & depth_m <= 11) 
+
+ggplot(do2014, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2014_down, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2014, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2014_down, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+ 
+
+
+### 2015
+
+Shallow DO:
+
+```{r}
+mando_2015_up <- mando_2015 %>% 
+  filter(depth_m < 2) 
+
+ggplot(do2015, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2015_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2015, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2015_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+```
+
+
+Deep DO:
+
+```{r}
+mando_2015_down <- mando_2015 %>% 
+  filter(depth_m >= 9 & depth_m <= 11) 
+
+ggplot(do2015, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2015_down, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2015, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2015_down, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+
+
+
+### 2016
+
+Shallow DO:
+
+```{r}
+mando_2016_up <- mando_2016 %>% 
+  filter(depth_m < 2) 
+
+ggplot(do2016, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2016_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2016, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2016_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+
+
+Deep DO:
+
+```{r}
+mando_2016_down <- mando_2016 %>% 
+  filter(depth_m >= 9 & depth_m <= 11) 
+
+ggplot(do2016, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2016_down, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2016, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2016_down, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+* red are manual measurements
+
+
+### 2017
+
+Shallow DO:
+
+```{r}
+mando_2017_up <- mando_2017 %>% 
+  filter(depth_m < 2) 
+
+ggplot(do2017, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2017_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2017, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2017_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+
+
+
+Deep DO:
+
+```{r}
+mando_2017_down <- mando_2017 %>% 
+  filter(depth_m >= 9 & depth_m <= 11) 
+
+ggplot(do2017, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2017_down, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2017, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2017_down, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+
+
+
+### 2018
+
+Shallow DO:
+
+No upper do data from buoy this season; hobo sensor used
+
+Do from the HOBO sensor:
+```{r}
+mando_2018_up <- mando_2018 %>% 
+  filter(depth_m < 2) 
+
+ggplot(do2018hobo, aes(x = datetime, y = oxygenDissolved_mgl_0p25m, shape = flag_do0p25m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2018_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+```
+
+
+
+
+Deep DO: 
+
+```{r}
+mando_2018_down <- mando_2018 %>% 
+  filter(depth_m >= 9 & depth_m <= 11) 
+
+ggplot(do2018, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2018_down, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2018, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2018_down, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+
+
+
+
+### 2019
+
+Shallow DO:
+
+```{r}
+mando_2019_up <- mando_2019 %>% 
+  filter(depth_m < 2) 
+
+ggplot(do2019, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2019_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2019, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2019_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+
+
+
+
+Deep DO:
+
+```{r}
+mando_2019_down <- mando_2019 %>% 
+  filter(depth_m >= 9 & depth_m <= 11) 
+
+ggplot(do2019, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2019_down, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2019, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2019_down, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+
+
+### 2020
+
+Shallow DO:
+
+```{r}
+mando_2020_up <- mando_2020 %>% 
+  filter(depth_m < 2) 
+
+ggplot(do2020, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2020_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2020, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2020_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+
+* red are manual measurements (none at buoy location, only site 210)
+
+Deep DO:
+
+```{r}
+mando_2020_down <- mando_2020 %>% 
+  filter(depth_m >= 9 & depth_m <= 11) 
+
+ggplot(do2020, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2020_down, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2020, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2020_down, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+
+
+
+### 2021
+
+Shallow DO:
+
+```{r}
+mando_2021_up <- mando_2021 %>% 
+  filter(depth_m < 2) 
+
+ggplot(do2021upper, aes(x = datetime, y = oxygenDissolved_mgl_1m, shape = flag_exodo, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2021_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2021upper, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1m, shape = flag_exodo, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2021_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
+
+* red are manual measurements (none at buoy location, only site 210)
+
+Deep DO:
+
+```{r}
+mando_2021_down <- mando_2021 %>% 
+  filter(depth_m >= 9 & depth_m <= 11) 
+
+ggplot(do2021lower, aes(x = datetime, y = oxygenDissolved_mgl_10m, shape = flag_do10m, color = data_source)) +
+  geom_point() +
+   geom_point(data = mando_2021_down, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+
+ggplot(do2021lower, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10m, shape = flag_do10m, color = data_source)) +
+  geom_point() +
+     geom_point(data = mando_2021_down, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
+  facet_grid(buoy_location ~ .) +
+  final_theme +
+  scale_color_colorblind(name = 'data source\n(symbol color)') +
+  scale_shape(name = 'DO flag\n(symbol shape)') +
+  labs(x = NULL,
+       y = 'dissolved oxygen\n(percent saturation)')
+```
