@@ -365,9 +365,9 @@ buoy2019_L1 <- buoy2019_L1 %>%
 mutate_at(vars(all_of(lowDO), all_of(upDO)),
           ~(case_when(datetime == as.POSIXct('2019-05-23 9:30', tz=buoy_tz) ~ NA_real_,
                          TRUE ~ .))) %>% 
-  mutate(flag_do1p5m= case_when(datetime == as.POSIXct('2019-05-23 9:30', tz=buoy_tz) ~ 'c',
+  mutate(flag_do0p25m= case_when(datetime == as.POSIXct('2019-05-23 9:30', tz=buoy_tz) ~ 'c',
                         TRUE ~ ''),
-         flag_do10p5m= case_when(datetime == as.POSIXct('2019-05-23 9:30', tz=buoy_tz) ~ 'c',
+         flag_do10m= case_when(datetime == as.POSIXct('2019-05-23 9:30', tz=buoy_tz) ~ 'c',
                                    TRUE ~ ''))
 
 buoy2019_do_vert_L1 <- buoy2019_L1 %>% 
@@ -635,12 +635,12 @@ rm(buoy2020_do_vert, buoy2020_do_vert_L1, docheckppm, dochecksat)
 
 #rename with CV
 buoy2019_L1 <- buoy2019_L1 %>% 
-  rename(oxygenDissolved_mgl_1p5m = DOppm,
-         oxygenDissolvedPercentOfSaturation_pct_1p5m = DOSat,
-         waterTemperature_DO_degC_1p5m = DOTempC,
-         oxygenDissolved_mgl_10p5m = DOLowPPM,
-         oxygenDissolvedPercentOfSaturation_pct_10p5m = DOLowSat,
-         waterTemperature_DO_degC_10p5m = DOLowTempC)
+  rename(oxygenDissolved_mgl_0p25m = DOppm,
+         oxygenDissolvedPercentOfSaturation_pct_0p25m = DOSat,
+         waterTemperature_DO_degC_0p25m = DOTempC,
+         oxygenDissolved_mgl_10m = DOLowPPM,
+         oxygenDissolvedPercentOfSaturation_pct_10m = DOLowSat,
+         waterTemperature_DO_degC_10m = DOLowTempC)
 
 
 # ####CHLA####
@@ -1029,10 +1029,10 @@ buoy2019_L1 %>%
 # export L1 do file
 buoy2019_L1 %>%
   select(datetime, location, 
-         oxygenDissolved_mgl_1p5m, oxygenDissolvedPercentOfSaturation_pct_1p5m, waterTemperature_DO_degC_1p5m, 
-         flag_do1p5m,
-         oxygenDissolved_mgl_10p5m, oxygenDissolvedPercentOfSaturation_pct_10p5m, waterTemperature_DO_degC_10p5m, 
-         flag_do10p5m) %>%
+         oxygenDissolved_mgl_0p25m, oxygenDissolvedPercentOfSaturation_pct_0p25m, waterTemperature_DO_degC_0p25m, 
+         flag_do0p25m,
+         oxygenDissolved_mgl_10m, oxygenDissolvedPercentOfSaturation_pct_10m, waterTemperature_DO_degC_10m, 
+         flag_do10m) %>%
   mutate(datetime = as.character(datetime)) %>%
   write_csv(., file.path(dump_dir, 'do/2019_do_L1_v2022.csv'))
 

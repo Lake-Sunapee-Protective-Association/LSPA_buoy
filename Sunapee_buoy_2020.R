@@ -535,9 +535,9 @@ mutate_at(vars(all_of(lowDO), all_of(upDO)),
   mutate_at(vars(all_of(lowDO)),
             ~ case_when(datetime < as.Date('2020-08-06') ~ NA_real_,
                         TRUE ~ .)) %>% 
-  mutate(flag_do1p5m = case_when(datetime == (as.POSIXct(paste(deployment, '10:00', sep = ' '), tz=buoy_tz) + hours(3)) ~ 'c',
+  mutate(flag_do0p25m = case_when(datetime == (as.POSIXct(paste(deployment, '10:00', sep = ' '), tz=buoy_tz) + hours(3)) ~ 'c',
                                    TRUE ~ ''),
-         flag_do10p5m = case_when(datetime == (as.POSIXct(paste(deployment, '10:00', sep = ' '), tz=buoy_tz) + hours(3)) ~ 'c',
+         flag_do10m = case_when(datetime == (as.POSIXct(paste(deployment, '10:00', sep = ' '), tz=buoy_tz) + hours(3)) ~ 'c',
                                    TRUE ~ ''))
 
 buoy2020_do_vert_L1 <- buoy2020_L1 %>% 
@@ -637,9 +637,9 @@ buoy2020_L1 <- buoy2020_L1 %>%
   mutate_at(vars(all_of(lowDO)),
             ~ case_when(datetime < as.POSIXct(paste(look_date, '12:20', sep = ' '), tz=buoy_tz) ~ NA_real_,
                         TRUE ~ .)) %>% 
-  mutate(flag_do10p5m = case_when(datetime == as.POSIXct(paste(look_date, '12:20', sep = ' '), tz=buoy_tz) ~ 'x; cp',
+  mutate(flag_do10m = case_when(datetime == as.POSIXct(paste(look_date, '12:20', sep = ' '), tz=buoy_tz) ~ 'x; cp',
                                    datetime > as.POSIXct(paste(look_date, '12:20', sep = ' '), tz=buoy_tz) ~ 'x',
-                                   TRUE ~ flag_do10p5m))
+                                   TRUE ~ flag_do10m))
 
 buoy2020_do_vert_L1 <- buoy2020_L1 %>% 
   select(datetime, all_of(lowDO), all_of(upDO)) %>%
@@ -877,9 +877,9 @@ for(i in 1:(nrow(weekly_2020)-1)) {
 
 #rename with CV
 buoy2020_L1 <- buoy2020_L1 %>% 
-  rename(oxygenDissolved_mgl_1p5m = DOppm,
-         oxygenDissolvedPercentOfSaturation_pct_1p5m = DOSat,
-         waterTemperature_DO_degC_1p5m = DOTempC,
+  rename(oxygenDissolved_mgl_0p25m = DOppm,
+         oxygenDissolvedPercentOfSaturation_pct_0p25m = DOSat,
+         waterTemperature_DO_degC_0p25m = DOTempC,
          oxygenDissolved_mgl_10p5m = DOLowPPM,
          oxygenDissolvedPercentOfSaturation_pct_10p5m = DOLowSat,
          waterTemperature_DO_degC_10p5m = DOLowTempC)
@@ -1407,7 +1407,7 @@ colnames(buoy2020_L1)
 #make sure data are recoded during offline/in transit period
 buoy2020_L1 <- buoy2020_L1 %>% 
   mutate_at(vars(waterTemperature_degC_0p75m:waterTemperature_degC_9p75m,
-            oxygenDissolved_mgl_1p5m,oxygenDissolvedPercentOfSaturation_pct_1p5m, waterTemperature_DO_degC_1p5m,
+            oxygenDissolved_mgl_0p25m,oxygenDissolvedPercentOfSaturation_pct_0p25m, waterTemperature_DO_degC_0p25m,
             windDirectionInstantaneous_deg, windSpeedInstantaneous_mps,
             windDirectionAverage_deg, windSpeedAverage_mps, 
             radiationIncomingPAR_umolm2s,
@@ -1426,10 +1426,10 @@ buoy2020_L1 %>%
 # export L1 do file
 buoy2020_L1 %>%
   select(datetime, location, 
-         oxygenDissolved_mgl_1p5m, oxygenDissolvedPercentOfSaturation_pct_1p5m, waterTemperature_DO_degC_1p5m, 
-         flag_do1p5m,
+         oxygenDissolved_mgl_0p25m, oxygenDissolvedPercentOfSaturation_pct_0p25m, waterTemperature_DO_degC_0p25m, 
+         flag_do0p25m,
          oxygenDissolved_mgl_10p5m, oxygenDissolvedPercentOfSaturation_pct_10p5m, waterTemperature_DO_degC_10p5m, 
-         flag_do10p5m) %>%
+         flag_do10m) %>%
   mutate(datetime = as.character(datetime)) %>%
   write_csv(., file.path(dump_dir, 'do/2020_do_L1_v2022.csv'))
 
