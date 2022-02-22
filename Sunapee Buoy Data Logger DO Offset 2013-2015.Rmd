@@ -1,7 +1,7 @@
 ---
 title: "Sunapee Buoy Data Logger DO Offset 2013-2015"
-author: "B. Steele"
-date: "2022-02-16"
+author: "B. Steele, Weathers Lab, Cary Institue"
+date: "2022-02-22"
 output: word_document
 ---
 
@@ -38,27 +38,28 @@ do2015 <- read.csv(file.path(datadir, '2015_do_L1_v2022.csv')) %>%
 ```
 
 
-# Sunapee Buoy Dissolved Oxygen Offset Timeline   
+# Sunapee Buoy Dissolved Oxygen Offset Timeline Overview
 
-This script is meant to identify and document offsets in the dissolved oxygen (DO) record from the Campbell data logger history from 2013-2015. The script also documents decisions made about the data as published on EDI. This is meant to serve as a reference document to other researchers who intend to use the dissolved oxygen data from the Lake Sunapee Protective Association (LSPA) buoy. 
+This script is meant to identify and document offsets in the dissolved oxygen (DO) record from the Campbell data logger history from 2013-2015. The script also documents decisions made about the data as published on EDI. It is meant to serve as a reference document to other researchers who intend to use the DO data from the Lake Sunapee Protective Association (LSPA)-Global Lake Ecological Observatory Network (GLEON) buoy.
 
-At the initial deployment mid-2010 of the buoy until 2016, the metadata record for the dissolved oxygen sensor had no mention of calibration of the unit. Towards the end of 2013, an offset was introduced at the level of the Campbell data logger program in order to compensate for the difference between manual DO measurements and the data being recorded at the buoy. The offset applied on 2013-09-25 affected the shallow and deep DO sensors. This offset was in effect through the data recorded at the Harbor location in April 2014, prior to a data gap due to logger reset. When the logger was reset in June 2014, the offset from 2013-09-25 remained. This offset was removed from the Cambell data logger program on 2014-07-28. A new offset was introduced on 2014-09-18, and though there is not a record of this particular datalogger program, the notes in the diary of the program state that the shallow DO offset was adjusted to -2 for mg/L and -20 for percent saturation. This offset persisted until a new Ponsel DO sensor was installed on 2015-06-03. From that point forward, there is no offset applied to the DO sensors. No offset was applied to the deep DO sensor on 2014-09-18. 
+At the initial deployment mid-2010 of the buoy until 2016, the metadata record for the DO sensor had no mention of calibration of the unit. Towards the end of 2013, an offset was introduced to the Campbell data logger program in order to compensate for the difference between manual DO measurements and the data being recorded at the buoy. The offset applied on 25 September 2013 affected the shallow (1.5 meters) and deep (10.5 meters) DO sensors. This offset was applied to the data recorded at the Sunapee Harbor (winter) location in April 2014, prior to a data gap due to logger reset. When the logger was reset in June 2014, the offset applied on 25 September 2013 remained. This offset was removed from the Cambell data logger program on 28 July 2014. A new offset was introduced on 18 September 2014, and although there is not a record of the associated datalogger program, the notes in the diary of the program state that the shallow DO offset was adjusted to -2 mg/L [DO] and -20 for percent saturation. This offset persisted until a new Ponsel DO sensor was installed on 3 June 2015. From this date forward, there is no offset applied to the DO sensors. No offset was applied to the deep DO sensor on 18 September 2014.
 
-Four primary actions have been taken to resolve these offsets and assist others in using the LSPA dissolved oxygen data:
+Four primary actions have been taken to resolve these offsets and assist others in using the LSPA DO data:
 
-1) all offset DO data are stored in a column with the suffix '_withoffval'
-2) offset values from the programs are stored in the columns with the prefix 'offval_'
-3) raw data values are back-calculated where offsets are present and stored in the DO data column without a suffix, indicating *raw data*
-4) a flag column indicates documented calibration ('c') and cleaning ('w'), and where cleaning is presumed based on behavior of data ('wp'). An 'x' flag persists until the first documented calibration of the DO sensor or in years that there was no documented calibration on record. An 'o' indicates that the data were back-calculated from an offset.
+1)	raw data values are back-calculated where offsets are present and stored in the DO data column without a suffix, indicating *raw data*
+2)	all offset DO data are stored in a column with the suffix '_withoffval', indicating *offset data*
+3)	offset values from the programs are stored in the columns with the prefix ‘offval_’
+4)	a flag column indicates documented calibration (‘c’) and cleaning (‘w’), and where cleaning is presumed based on behavior of data (‘wp’). An ‘x’ flag persists until the first documented calibration of the DO sensor or in years that there was no documented calibration on record. An ‘o’ indicates that the data were back-calculated from an offset.
 
-Data subject to an offset will be referred to as __'offset data'__; data with no offset applied or back-calculated from the offset data will be referred to as __'raw data'__ - note that these are not actual raw data precisely, but rather the most raw data we have available from the data logger. 
+Data with no offset applied or back-calculated from the offset data are referred to as __‘raw data’__ - note that these are the closest to raw data (i.e., direct readings from the sensor) that are available. Data to which an offset has been applied are referred to as __‘offset data’__.
 
 For a comparison of manual DO measurements and buoy-derived DO data, see the document *LSPA buoy DO Visual History*, also included in this data package.
 
+\newpage
 
 ## DO offset documentation from the Campbell datalogger files
 
-This data logger diary was copied from the most recent CSI file dated 2019-05-12.
+This data logger diary was copied from the most recent CSI file dated 12 May 2019.
 
 2009-01-14 - LW - Rewrote CSI file from *.dld dumped from datalogger, old CSI file lost
                 - Changed most of the voltage range options to autorange, more accurate, only 1ms slower
@@ -95,8 +96,7 @@ This data logger diary was copied from the most recent CSI file dated 2019-05-12
 
 ### Prior to 2013-09-10
 
-There were no saved programs prior to 2013-09-10. It appears that there were no offsets applied to the data at the Campbell datalogger. This assessment was made because there are no obvious jumps in the DO data prior to that time, except where sensors were changed or where there were data gaps for buoy maintenance. 
-
+There were no saved programs prior to 10 September 2013. It appears that there were no offsets applied to the data at the Campbell datalogger. This assessment was made because there are no obvious jumps in the DO data prior to that time, except where sensors were changed or where there were data gaps for buoy maintenance.
 
 ### 2013-09-10 - JRM - Change PONSEL measure command to aC! (concurrent measurement)
 
@@ -152,17 +152,15 @@ This file documents offsets for saturation and concentration for both sensors ('
 
 ### 2014-07-28 - JRM - Removed low DO & hi DO offsets separately read low DO sensor, removed one temp sensor from line
 
-There is no CSI file associated with this change. Assume it sets all corrections from 2013-09-25 back to zero
-
+There is no CSI file associated with this change. Assume it sets all corrections from 25 September 2013 back to zero.
 
 ### 2014-09-18 - JCF - Made corrections on shallow DO based on Cal rdgs: -20 for sat and -2 for ppm 9/15/2014
 
-There is no CSI file associated with this change. Assume -20 for sat and -2 for ppm upper sensor only, as described in the diary.
-
+There is no CSI file associated with this change. Assume -20 for percent saturation and -2 for mg/L upper sensor only, as described in the diary.
 
 ### 2013-06-03 - JRM - Added new Ponsel DO and sonde with chlorophyl sensor
 
-This record indicates no DO offset, assume it was zeroed out from 2014-09-18 change.
+This record indicates no DO offset, assume it was zeroed out from 18 September 2014 change.
 
     ; Correction for deep DO sensor Saturation
       12:  Z=X+F (P34)
@@ -246,24 +244,21 @@ This record indicates no offset for DO sensors
       2: 0        F
       3: 27       Z Loc [ DoppmCor  ]
 
-
+\newpage
 ## DO visual history of the data logger offset
 
 The graphs below show the raw DO data from the buoy as well as the data with an offset applied. Offset values are indicated with grey symbols and back-calculated raw values are indicated with yellow symbols. Black symbols are raw data recorded without offset.
 
-Flag defninitions:
+Flag definitions:
 
     x: no calibration on record
 
     o: data back-calculated from offset values
 
-    wp: cleaning presumed (not visible at this level)
+    wp: cleaning presumed (generally not visible at this level)
 
 
-### 2013
-
-
-__Shallow DO:__
+### __2013 Shallow DO:__
 
 ```{r}
 ggplot(do2013, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, color = flag_do1p5m, shape = location, color = flag_do1p5m))+
@@ -282,10 +277,10 @@ ggplot(do2013, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
        y = 'dissolved oxygen\n(percent saturation)')
 ```
 
-Offset of __-1.72__ applied to DO concentration values, __-16.5__ applied to percent saturation values on 2013-09-25.
+Offset of __-1.72 mg_L__ applied to DO concentration values, __-16.5 percent__ applied to percent saturation values on 25 September 2013.
 
-
-__Deep DO:__
+\newpage
+### __2013 Deep DO:__
 
 ```{r}
 ggplot(do2013, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, color = flag_do10p5m, shape = location))+
@@ -304,13 +299,12 @@ geom_point(aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m_wi
 
 ```
 
-Deep DO sensor was deployed at ~ 10.5m in September. Offset of __-6.7__ applied to DO concentration values, __-73.7__ applied to percent saturation values on 2013-09-25.
+Deep DO sensor was deployed at ~ 10.5m in mid September. Offset of __-6.7 mg/L__ applied to DO concentration values, __-73.7 percent__ applied to percent saturation values on 25 September 2013.
 
 
+\newpage
 
-### 2014
-
-__Shallow DO:__
+### __2014 Shallow DO:__
 
 ```{r}
 ggplot(do2014, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, color = flag_do1p5m, shape = location, color = flag_do1p5m))+
@@ -318,7 +312,7 @@ geom_point(aes(x = datetime, y = oxygenDissolved_mgl_1p5m_withoffval), color = '
   geom_point() +
   final_theme + scale_color_colorblind()+
   labs(x = NULL,
-       y = 'dissolved oxygen/n(mg/L)')
+       y = 'dissolved oxygen\n(mg/L)')
 ggplot(do2014, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, color = flag_do1p5m, shape = location))+
   geom_point(aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m_withoffval), color = 'grey') +
   geom_point() +
@@ -328,10 +322,11 @@ ggplot(do2014, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
 
 ```
 
-Offset from 2013 of __-1.72__ applied to DO concentration values, __-16.5__ applied to percent saturation values, remained in effect until 2014-07-28. A new offset was introduced 2014-09-18 of __-2__ for the concentration values and __-20__ for the percent saturation values.
+Offset from 2013 of __-1.72 mg/L__ applied to DO concentration values, __-16.5 percent__ applied to percent saturation values, remained in effect until 28 July 2014. A new offset was introduced 18 September 2014 of __-2 mg/L__ for the concentration values and __-20 percent__ for the percent saturation values.
 
+\newpage
 
-__Deep DO:__
+### __2014 Deep DO:__
 
 ```{r}
 ggplot(do2014, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, color = flag_do10p5m, shape = location))+
@@ -350,12 +345,11 @@ geom_point(aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m_wi
        y = 'dissolved oxygen\n(percent saturation)')
 ```
 
-Offset from 2013 of __-6.7__ applied to DO concentration values and __-73.7__ applied to percent saturation values remained in effect through 2014-07-28. No offset was applied to the deep DO values at the time of the September shallow DO offset.
+Offset from 2013 of __-6.7 mg/L__ applied to DO concentration values and __-73.7 percent__ applied to percent saturation values remained in effect through 28 July 2014. No offset was applied to the deep DO values at the time of the September shallow DO offset.
 
+\newpage
 
-### 2015
-
-__Shallow DO:__
+### __2015 Shallow DO:__
 
 ```{r}
 ggplot(do2015, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, color = flag_do1p5m, shape = location, color = flag_do1p5m))+
@@ -375,10 +369,11 @@ ggplot(do2015, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
 
 ```
 
-The offset from 2014-09-18, of __-2__ for the concentration values and __-20__ for the percent saturation values, remained until a new Ponsel DO unit was installed prior to buoy move in June 2015 when the data logger program was overhauled. 
+The offset from 18 September 2014, of __-2 mg/L__ for the concentration values and __-20 percent__ for the percent saturation values, remained until a new Ponsel DO unit was installed prior to buoy move in June 2015 when the data logger program was overhauled. 
 
+\newpage
 
-__Deep DO:__
+### __2015 Deep DO:__
 
 ```{r}
 ggplot(do2015, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, color = flag_do10p5m, shape = location))+
@@ -400,5 +395,5 @@ There were no offsets applied to the deep DO values in 2015.
 
 # Conclusions
 
-While the offsets applied at the data logger compensated for calibration issues at the sensor, the application of offset values was not systematic or continuous. Due to the sporadic nature of the offsets, we back-calculated raw DO values for consistency in the data stream and for end-users to determine the best course of action in correcting the DO data for their needs. See the *LSPA buoy DO Visual History* document within this data package.
+While the offsets applied at the data logger compensated for calibration issues at the sensor, the application of offset values was not systematic or continuous. Due to the sporadic nature of the offsets, raw DO values were back-calculated for consistency in the data stream and for end-users to determine the best course of action in correcting the DO data for their needs. See the *LSPA buoy DO Visual History* document within this data package.
 
