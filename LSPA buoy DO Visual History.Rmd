@@ -1,7 +1,7 @@
 ---
-title: "LSPA Buoy DO Visual History"
-author: "B. Steele"
-date: "2022-02-16"
+title: "Lake Sunapee Protective Association Buoy DO Visual History"
+author: "B. Steele, Weathers Lab, Cary Institute"
+date: "2022-02-17"
 output: word_document
 ---
 
@@ -197,28 +197,28 @@ mando_2021 <-  mando %>%
 ```
 
 
-# Sunapee Buoy Dissolved Oxygen Offset Timeline   
+# LSPA Buoy Dissolved Oxygen Sensor History   
 
-This script is designed to present the dissolved oxygen (DO) data from the Lake Sunapee Protective Association (LSPA) alongside manual DO measurements made at the buoy and/or site 210, a long term monitoring site (LMP) near the buoy location. This is meant to serve as a reference document to other researchers who intend to use the dissolved oxygen data from the LSPA buoy. For the purposes of this document, only buoy data recorded at the Loon Island location are presented in this overview.
+This script is designed to present the dissolved oxygen (DO) data from the Lake Sunapee Protective Association (LSPA) buoy alongside manual DO measurements made at the buoy and/or site 210, a long term monitoring site (LMP) near the buoy location. This is meant to serve as a reference document to other researchers who intend to use the dissolved oxygen data from the LSPA buoy. For the purposes of this document, only buoy data recorded at the Loon Island location are presented in this overview.
 
-At the initial deployment mid-2010 of the buoy until 2016, the metadata record for the dissolved oxygen sensor had no mention of calibration of the unit. The shallow DO unit read at a noticeably higher concentration and percent saturation than the manually-recorded dissolved oxygen at nearby monitoring station 210 until a the buoy was re-deployed July 2009, after a data gap in the record to repair the buoy from overwinter damage. Dissolved oxygen data look more aligned until mid 2013, when the concentration and percent saturation were again noticeably higher than what was measured at site 210. 
+At the initial deployment mid-2010 of the buoy until the summer field season of 2016, the metadata record for the dissolved oxygen sensor had no mention of calibration of the unit. There was no documentation of calibration for either unit in 2017, for the deep DO in 2018, and the deep DO in 2020. All of these data have been flagged indicating that there was no calibration on record; however, it is important to note that there may have been calibration of the instruments, but it was not recorded.
 
-Towards the end of 2013, an offset was introduced at the level of the Campbell datalogger program in an attempt to correct for the difference between the manual DO measurements and the data recorded at the buoy. For details about how the offset was handled within this data package, review the document *Sunapee Buoy Data Logger DO Offset 2013-2015*. In this document we only presenst the __'raw data'__, that is the data that were recorded withoutan offset or that were back-calculated from an offset value. Note that these are not actual raw data precisely, but rather the most raw data we have available from the data logger. 
+Towards the end of 2013, an offset was introduced at the level of the Campbell datalogger program in an attempt to correct for the difference between the manual DO measurements and the data recorded at the buoy. For details about how the offset was handled within this data package, review the document *Sunapee Buoy Data Logger DO Offset 2013-2015*. Here, we only present the __‘raw data’__, that is, data that were recorded withoutan offset or that were back-calculated from an offset value. Note that these are not actual raw data precisely, but rather the most raw data we have available from the data logger.
 
-Within this data package, we provide the manual DO record from both the neighboring LMP site 210 as well as any DO readings at the buoy as material for end-users to apply correction factors to the data. Especially in the early years of the buoy, when there was no calibration on record, some sort will be absolutely necessary for use/application of the DO data. Because there are many methods for calibration and correction, we provide the raw DO data and the manual DO data for users to choose their method of correction. This record is collated in the R script *buoy_manual_do_collation.r* and is comprised of data from the LMP record (Steele, et al. 2021) and measurements that were made at the buoy site.
+Within this data package, we provide the manual DO record from both the neighboring LMP site 210 (data source: ‘LMP’) as well as any DO readings at the buoy (data source: ‘operations log’) as material for end-users to apply correction factors to the data. Especially in the early years of the buoy, when there was no calibration on record, some sort of DO correction will be necessary for use/application of the DO data. Because there are many methods for calibration and correction, we provide the raw DO data and the manual DO data for users to choose their method of correction. This record is collated in the R script *buoy_manual_do_collation.r* and is comprised of data from the LMP record (Steele, et al. 2021) and measurements that were made at the buoy site and stored in the operations log. Data shown in this document for the shallow DO are limited to the top 2m of depth, data shown alongside the deep DO are between 9 and 11m depth. Manual DO measurements prior to 2009 are flagged with a flag of ‘x’ - the data prior to this point had a much larger range than data after 2009 and beyond, so in this case ‘x’ implies that additional measurement error is likely for these data.
 
 
 ## Other LSPA Buoy data products
 
-In the Richardson, et al. 2020 data publication of the LSPA buoy data (EDI package ID 463) spans from 2007-2013. DO data runs 2007-2012. This data set was corrected for fouling and drift using a quadratic equation in an R script provided in the data package. This script references the manual DO measurements at site 210 as the calibration source and contains two methods for these types of corrections.
+The Richardson, et al. 2020 data publication of the LSPA buoy data (EDI package ID 463) spans from 2007-2013. DO data runs 2007-2012. This data set was corrected for fouling and drift using a quadratic equation in an R script provided in the data package. This script references the manual DO measurements at site 210 as the calibration source and contains two methods for these types of corrections.
 
 
 ## DO visual history
 
-Manual measurements made at site 210 are presented as gold symbols, measurements made at the buoy are light blue symbols in all figures. Manual DO measurements prior to 2009 are flagged with a flag of 'x' - the data prior to this point had a much larger range than data after 2009, so in this case 'x' implies that additional measurement error is likely for these data. 
+Below, we present figures of DO concentration (mg/L) and DO saturation (percent) from the buoy and from manual measurements obtained ~monthly by year. Manual measurements made at site 210 are presented as gold symbols, manual measurements made at the buoy are light blue symbols in all figures. 
 
 
-Flag defninitions:
+Buoy flag definitions:
 
 
     x: no calibration on record
@@ -240,16 +240,20 @@ Flag defninitions:
     re: DO cap replacement, no calibration on record (2018 only)
     
 
-Flags specific to the manual measurements:
+Manual measurement flags definitions:
 
     high: do values are very high
     
     low: do values are very low
     
+    x: data may have additional measurement error
+    
+Data that are flagged ‘high’ or ‘low’ should not be used in correction of the DO data from the buoy.
 
 ### 2007
 
-Shallow DO:
+Shallow DO (1.5 meters):
+
 ```{r}
 mando_2007_up <- mando_2007 %>% 
   filter(depth_m < 2) 
@@ -262,7 +266,7 @@ ggplot(do2007, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2007, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
    geom_point(data = mando_2007_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
@@ -280,7 +284,7 @@ ggplot(do2007, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
 
 ### 2008
 
-Shallow DO:
+Shallow DO (1.5 meters):
 
 ```{r}
 mando_2008_up <- mando_2008 %>% 
@@ -294,7 +298,7 @@ ggplot(do2008, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2008, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
   geom_point() +
@@ -310,7 +314,7 @@ ggplot(do2008, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
 
 ### 2009
 
-Shallow DO:
+Shallow DO (1.5 meters):
 
 ```{r}
 mando_2009_up <- mando_2009 %>% 
@@ -324,7 +328,7 @@ ggplot(do2009, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2009, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
   geom_point() +
@@ -340,7 +344,7 @@ ggplot(do2009, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
 
 ### 2010
 
-Shallow DO:
+Shallow DO (1.5 meters):
 
 ```{r}
 mando_2010_up <- mando_2010 %>% 
@@ -354,7 +358,7 @@ ggplot(do2010, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2010, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
   geom_point() +
@@ -370,7 +374,7 @@ ggplot(do2010, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
 
 ### 2011
 
-Shallow DO:
+Shallow DO (1.5 meters):
 
 ```{r}
 mando_2011_up <- mando_2011 %>% 
@@ -384,7 +388,7 @@ ggplot(do2011, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2011, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
   geom_point() +
@@ -401,7 +405,7 @@ ggplot(do2011, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
 
 ### 2012
 
-Shallow DO:
+Shallow DO (1.5 meters):
 
 ```{r}
 mando_2012_up <- mando_2012 %>% 
@@ -415,7 +419,7 @@ ggplot(do2012, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2012, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
   geom_point() +
@@ -431,9 +435,9 @@ ggplot(do2012, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
 
 ### 2013
 
-First year with low do sensor
+First year with deep DO sensor deployed.
 
-Shallow DO:
+Shallow DO (1.5 meters):
 
 ```{r}
 mando_2013_up <- mando_2013 %>% 
@@ -447,7 +451,7 @@ ggplot(do2013, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2013, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
   geom_point() +
@@ -462,7 +466,7 @@ ggplot(do2013, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
 ```
 
 
-Deep DO:
+Deep DO (10.5 meters):
 
 ```{r}
 mando_2013_down <- mando_2013 %>% 
@@ -476,7 +480,7 @@ ggplot(do2013, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do1
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2013, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
   geom_point() +
@@ -492,7 +496,7 @@ ggplot(do2013, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5
 
 ### 2014
 
-Shallow DO:
+Shallow DO (1.5 meters):
 
 ```{r}
 mando_2014_up <- mando_2014 %>% 
@@ -506,7 +510,7 @@ ggplot(do2014, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2014, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
   geom_point() +
@@ -521,7 +525,7 @@ ggplot(do2014, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
 ```
 
 
-Deep DO:
+Deep DO (10.5 meters):
 
 ```{r}
 mando_2014_down <- mando_2014 %>% 
@@ -535,7 +539,7 @@ ggplot(do2014, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do1
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2014, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
   geom_point() +
@@ -552,7 +556,7 @@ ggplot(do2014, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5
 
 ### 2015
 
-Shallow DO:
+Shallow DO (1.5 meters):
 
 ```{r}
 mando_2015_up <- mando_2015 %>% 
@@ -566,7 +570,7 @@ ggplot(do2015, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2015, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
   geom_point() +
@@ -581,7 +585,7 @@ ggplot(do2015, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
 ```
 
 
-Deep DO:
+Deep DO (10.5 meters):
 
 ```{r}
 mando_2015_down <- mando_2015 %>% 
@@ -595,7 +599,7 @@ ggplot(do2015, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do1
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2015, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
   geom_point() +
@@ -612,7 +616,7 @@ ggplot(do2015, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5
 
 ### 2016
 
-Shallow DO:
+Shallow DO (1.5 meters):
 
 ```{r}
 mando_2016_up <- mando_2016 %>% 
@@ -626,7 +630,7 @@ ggplot(do2016, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2016, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
   geom_point() +
@@ -640,7 +644,7 @@ ggplot(do2016, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
 ```
 
 
-Deep DO:
+Deep DO (10.5 meters):
 
 ```{r}
 mando_2016_down <- mando_2016 %>% 
@@ -654,7 +658,7 @@ ggplot(do2016, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do1
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2016, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
   geom_point() +
@@ -666,12 +670,11 @@ ggplot(do2016, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5
   labs(x = NULL,
        y = 'dissolved oxygen\n(percent saturation)')
 ```
-* red are manual measurements
 
 
 ### 2017
 
-Shallow DO:
+Shallow DO (1.5 meters):
 
 ```{r}
 mando_2017_up <- mando_2017 %>% 
@@ -685,7 +688,7 @@ ggplot(do2017, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2017, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
   geom_point() +
@@ -700,7 +703,7 @@ ggplot(do2017, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
 
 
 
-Deep DO:
+Deep DO (10.5 meters):
 
 ```{r}
 mando_2017_down <- mando_2017 %>% 
@@ -714,7 +717,7 @@ ggplot(do2017, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do1
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2017, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
   geom_point() +
@@ -731,11 +734,11 @@ ggplot(do2017, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5
 
 ### 2018
 
-Shallow DO:
+Shallow DO (0.25 meters):
 
-No upper do data from buoy this season; hobo sensor used
+No upper do data from buoy this season; HOBO U26 sensor used instead. Only DO concentration data available for this season.
 
-Do from the HOBO sensor:
+
 ```{r}
 mando_2018_up <- mando_2018 %>% 
   filter(depth_m < 2) 
@@ -748,14 +751,14 @@ ggplot(do2018hobo, aes(x = datetime, y = oxygenDissolved_mgl_0p25m, shape = flag
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ```
 
 
 
 
-Deep DO: 
+Deep DO (10.5 meters): 
 
 ```{r}
 mando_2018_down <- mando_2018 %>% 
@@ -769,7 +772,7 @@ ggplot(do2018, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do1
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2018, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
   geom_point() +
@@ -787,13 +790,13 @@ ggplot(do2018, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5
 
 ### 2019
 
-Shallow DO:
+Shallow DO (0.25 meters):
 
 ```{r}
 mando_2019_up <- mando_2019 %>% 
   filter(depth_m < 2) 
 
-ggplot(do2019, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p5m, color = data_source)) +
+ggplot(do2019, aes(x = datetime, y = oxygenDissolved_mgl_0p25m, shape = flag_do0p25m, color = data_source)) +
   geom_point() +
    geom_point(data = mando_2019_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
   facet_grid(buoy_location ~ .) +
@@ -801,9 +804,9 @@ ggplot(do2019, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
-ggplot(do2019, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
+ggplot(do2019, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_0p25m, shape = flag_do0p25m, color = data_source)) +
   geom_point() +
      geom_point(data = mando_2019_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
   facet_grid(buoy_location ~ .) +
@@ -817,13 +820,13 @@ ggplot(do2019, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
 
 
 
-Deep DO:
+Deep DO (10 meters):
 
 ```{r}
 mando_2019_down <- mando_2019 %>% 
   filter(depth_m >= 9 & depth_m <= 11) 
 
-ggplot(do2019, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do10p5m, color = data_source)) +
+ggplot(do2019, aes(x = datetime, y = oxygenDissolved_mgl_10m, shape = flag_do10m, color = data_source)) +
   geom_point() +
    geom_point(data = mando_2019_down, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
   facet_grid(buoy_location ~ .) +
@@ -831,9 +834,9 @@ ggplot(do2019, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do1
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
-ggplot(do2019, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
+ggplot(do2019, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10m, shape = flag_do10m, color = data_source)) +
   geom_point() +
      geom_point(data = mando_2019_down, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
   facet_grid(buoy_location ~ .) +
@@ -847,13 +850,13 @@ ggplot(do2019, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5
 
 ### 2020
 
-Shallow DO:
+Shallow DO (0.25 meters):
 
 ```{r}
 mando_2020_up <- mando_2020 %>% 
   filter(depth_m < 2) 
 
-ggplot(do2020, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p5m, color = data_source)) +
+ggplot(do2020, aes(x = datetime, y = oxygenDissolved_mgl_0p25m, shape = flag_do0p25m, color = data_source)) +
   geom_point() +
    geom_point(data = mando_2020_up, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
   facet_grid(buoy_location ~ .) +
@@ -861,9 +864,9 @@ ggplot(do2020, aes(x = datetime, y = oxygenDissolved_mgl_1p5m, shape = flag_do1p
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
-ggplot(do2020, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m, shape = flag_do1p5m, color = data_source)) +
+ggplot(do2020, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_0p25m, shape = flag_do0p25m, color = data_source)) +
   geom_point() +
      geom_point(data = mando_2020_up, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
   facet_grid(buoy_location ~ .) +
@@ -874,15 +877,14 @@ ggplot(do2020, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1p5m
        y = 'dissolved oxygen\n(percent saturation)')
 ```
 
-* red are manual measurements (none at buoy location, only site 210)
 
-Deep DO:
+Deep DO (10 meters):
 
 ```{r}
 mando_2020_down <- mando_2020 %>% 
   filter(depth_m >= 9 & depth_m <= 11) 
 
-ggplot(do2020, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do10p5m, color = data_source)) +
+ggplot(do2020, aes(x = datetime, y = oxygenDissolved_mgl_10m, shape = flag_do10m, color = data_source)) +
   geom_point() +
    geom_point(data = mando_2020_down, aes(x = datetime, y = oxygenDissolved_mgl, shape = flag_domgl, color = data_source)) +
   facet_grid(buoy_location ~ .) +
@@ -890,9 +892,9 @@ ggplot(do2020, aes(x = datetime, y = oxygenDissolved_mgl_10p5m, shape = flag_do1
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
-ggplot(do2020, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5m, shape = flag_do10p5m, color = data_source)) +
+ggplot(do2020, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10m, shape = flag_do10m, color = data_source)) +
   geom_point() +
      geom_point(data = mando_2020_down, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct, shape = flag_dopct, color = data_source)) +
   facet_grid(buoy_location ~ .) +
@@ -907,7 +909,7 @@ ggplot(do2020, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10p5
 
 ### 2021
 
-Shallow DO:
+Shallow DO (1 meter):
 
 ```{r}
 mando_2021_up <- mando_2021 %>% 
@@ -921,7 +923,7 @@ ggplot(do2021upper, aes(x = datetime, y = oxygenDissolved_mgl_1m, shape = flag_e
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2021upper, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_1m, shape = flag_exodo, color = data_source)) +
   geom_point() +
@@ -934,9 +936,8 @@ ggplot(do2021upper, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct
        y = 'dissolved oxygen\n(percent saturation)')
 ```
 
-* red are manual measurements (none at buoy location, only site 210)
 
-Deep DO:
+Deep DO (10 meters):
 
 ```{r}
 mando_2021_down <- mando_2021 %>% 
@@ -950,7 +951,7 @@ ggplot(do2021lower, aes(x = datetime, y = oxygenDissolved_mgl_10m, shape = flag_
   scale_color_colorblind(name = 'data source\n(symbol color)') +
   scale_shape(name = 'DO flag\n(symbol shape)') +
   labs(x = NULL,
-       y = 'dissolved oxygen\n(percent saturation)')
+       y = 'dissolved oxygen\n(mg/L)')
 
 ggplot(do2021lower, aes(x = datetime, y = oxygenDissolvedPercentOfSaturation_pct_10m, shape = flag_do10m, color = data_source)) +
   geom_point() +
