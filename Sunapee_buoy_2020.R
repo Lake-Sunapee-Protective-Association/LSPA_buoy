@@ -880,9 +880,9 @@ buoy2020_L1 <- buoy2020_L1 %>%
   rename(oxygenDissolved_mgl_0p25m = DOppm,
          oxygenDissolvedPercentOfSaturation_pct_0p25m = DOSat,
          waterTemperature_DO_degC_0p25m = DOTempC,
-         oxygenDissolved_mgl_10p5m = DOLowPPM,
-         oxygenDissolvedPercentOfSaturation_pct_10p5m = DOLowSat,
-         waterTemperature_DO_degC_10p5m = DOLowTempC)
+         oxygenDissolved_mgl_10m = DOLowPPM,
+         oxygenDissolvedPercentOfSaturation_pct_10m = DOLowSat,
+         waterTemperature_DO_degC_10m = DOLowTempC)
 
 #clean up workspace
 rm(buoy2020_do_vert, buoy2020_do_vert_L1)
@@ -1428,7 +1428,7 @@ buoy2020_L1 %>%
   select(datetime, location, 
          oxygenDissolved_mgl_0p25m, oxygenDissolvedPercentOfSaturation_pct_0p25m, waterTemperature_DO_degC_0p25m, 
          flag_do0p25m,
-         oxygenDissolved_mgl_10p5m, oxygenDissolvedPercentOfSaturation_pct_10p5m, waterTemperature_DO_degC_10p5m, 
+         oxygenDissolved_mgl_10m, oxygenDissolvedPercentOfSaturation_pct_10m, waterTemperature_DO_degC_10m, 
          flag_do10m) %>%
   mutate(datetime = as.character(datetime)) %>%
   write_csv(., file.path(dump_dir, 'do/2020_do_L1_v2022.csv'))

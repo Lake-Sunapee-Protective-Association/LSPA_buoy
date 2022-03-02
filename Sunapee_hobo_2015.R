@@ -72,6 +72,7 @@ hobo2015 <- hobo2015 %>%
 
 #export L1 tempstring file
 hobo2015 %>%
+  select(-datetime.local) %>% 
   mutate(datetime = as.character(datetime)) %>%
   mutate(location = 'loon') %>% 
   write_csv(., 'C:/Users/steeleb/Dropbox/Lake Sunapee/monitoring/buoy data/data/all sensors/L1/tempstring/2015_hobotempstring_L1_v2022.csv') 

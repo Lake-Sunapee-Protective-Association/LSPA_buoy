@@ -1020,6 +1020,10 @@ buoy2008_L1 <- buoy2008_L1 %>%
   mutate(InstWindDir = case_when(InstWindDir==-6999 ~ NA_real_,
                                  TRUE ~ InstWindDir))
 
+buoy2008_L1 <- buoy2008_L1 %>% 
+  mutate(InstWindDir = NA_real_) %>% 
+  mutate(flag_winddir = 'e')
+
 wind_vert <- buoy2008_L1 %>% 
   select(datetime, InstWindDir, InstWindSp) %>% 
   pivot_longer(names_to = 'variable', values_to = 'value', -datetime)
@@ -1318,10 +1322,6 @@ ggplot(wind_vert_b, aes(x = datetime, y = value)) +
        x = NULL,
        y = NULL) +
   scale_x_datetime(date_minor_breaks = '1 month')
-
-#flag for errant direction data
-buoy2008_L1 <- buoy2008_L1 %>% 
-  mutate(flag_winddir = 'e')
 
 #rename with CV
 buoy2008_L1 <- buoy2008_L1 %>% 

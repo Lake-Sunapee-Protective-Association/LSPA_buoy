@@ -1198,10 +1198,12 @@ wind_vert_b <- buoy2009_L1 %>%
 #        y = NULL) +
 #   scale_x_datetime(date_minor_breaks = '1 day')
 
-# add flag to wind direction prior to jul 28 when buoy online
+# add flag to wind direction and recode prior to jul 28 when buoy online
 buoy2009_L1 <- buoy2009_L1 %>% 
   mutate(flag_winddir = case_when(datetime < as.POSIXct('2009-07-28', tz=buoy_tz) & !is.na(InstWindDir) ~ 'e',
-                                   TRUE ~ ''))
+                                   TRUE ~ ''))%>% 
+    mutate(InstWindDir = case_when(datetime < as.POSIXct('2009-07-28', tz=buoy_tz) ~ NA_real_,
+                                   TRUE ~ InstWindDir))
 wind_vert_b <- buoy2009_L1 %>% 
   select(datetime, InstWindDir, AveWindDir,InstWindSp, AveWindSp, location, flag_winddir, flag_allwind) %>% 
   pivot_longer(names_to = 'variable', values_to = 'value', -c(datetime, location, flag_winddir, flag_allwind))

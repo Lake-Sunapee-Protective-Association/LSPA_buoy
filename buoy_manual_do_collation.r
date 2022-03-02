@@ -110,16 +110,23 @@ ggplot(do210, aes(x = date, y = value, color = depth_m, shape = flag)) +
 do210 <- do210 %>% 
   mutate(flag = case_when(date == as.Date('2010-06-02') & grepl('DO', parameter, ignore.case = T) ~ 'DO values seem low',
                           date == as.Date('2019-09-16') & grepl('DO', parameter, ignore.case = T) ~ 'DO values seem high',
-                          parameter == 'DO_mgl' & date < as.Date('2009-01-01') & flag == '' ~ 'may be calibration issues/non-calibration',
-                          parameter == 'DO_pctsat' & date < as.Date('2009-01-01') & flag == '' ~ 'may be calibration issues/non-calibration',
+                          # parameter == 'DO_mgl' & date < as.Date('2009-01-01') & flag == '' ~ 'may be calibration issues/non-calibration',
+                          # parameter == 'DO_pctsat' & date < as.Date('2009-01-01') & flag == '' ~ 'may be calibration issues/non-calibration',
                           TRUE ~ flag))
+
+unique(do210$flag)
+
+#filter for only those without flags
+do210 <- do210 %>% 
+  filter(flag == '')
+unique(do210$flag)
 
 head(do210)
 do210 <- do210 %>% 
-  select(date, depth_m, parameter, value, flag, location)
+  select(date, depth_m, parameter, value, location)
 
 #plot to double check
-ggplot(do210, aes(x = date, y = value, color = depth_m, shape = flag)) +
+ggplot(do210, aes(x = date, y = value, color = depth_m)) +
   geom_point() +
   facet_grid(parameter ~ ., scales = 'free_y') +
   theme(legend.position = 'bottom')
@@ -127,18 +134,15 @@ ggplot(do210, aes(x = date, y = value, color = depth_m, shape = flag)) +
 #pivot to match manual measurements
 lmp_domgl <- do210 %>% 
   filter(parameter == 'DO_mgl') %>% 
-  rename(oxygenDissolved_mgl = value,
-          flag_domgl = flag)%>% 
+  rename(oxygenDissolved_mgl = value)%>% 
   select(-parameter)
 lmp_dosat <- do210 %>% 
   filter(parameter == 'DO_pctsat') %>% 
-  rename(oxygenDissolvedPercentOfSaturation_pct = value,
-          flag_dopct = flag)%>% 
+  rename(oxygenDissolvedPercentOfSaturation_pct = value)%>% 
   select(-parameter)
 lmp_temp <- do210 %>% 
   filter(parameter == 'temp_C') %>% 
-  rename(waterTemperature_degC = value,
-          flag_temp = flag) %>% 
+  rename(waterTemperature_degC = value) %>% 
   select(-parameter)
 
 lmp_manual <- full_join(lmp_domgl, lmp_dosat) %>% 
@@ -151,6 +155,15 @@ head(lmp_manual)
 
 # join both data sources and plot ####
 manual_do = full_join(log, lmp_manual)
+unique(manual_do$flag_domgl)
+unique(manual_do$flag_dopct)
+manual_do <- manual_do %>% 
+  mutate_at(vars(flag_domgl, flag_dopct),
+            ~case_when(is.na(.) ~ '',
+                       TRUE ~ .))
+
+manual_do <- manual_do %>% 
+  filter(flag_domgl == '')
 
 ggplot(manual_do, aes(x = date, y = oxygenDissolvedPercentOfSaturation_pct, color = depth_m, shape = flag_dopct)) +
   geom_point() +
@@ -167,15 +180,13 @@ ggplot(manual_do, aes(x = date, y = waterTemperature_degC, color = depth_m)) +
 
 
 # export file ####
-unique(manual_do$flag_domgl)
-unique(manual_do$flag_dopct)
-unique(manual_do$flag_temp)
-#remove the temp flag column
-manual_do$flag_temp = NULL
+
 
 startyear = format(min(manual_do$date), '%Y')
 endyear = format(max(manual_do$date), '%Y')
 
 manual_do %>% 
   arrange(date, depth_m) %>% 
-  write.csv(., file.path(dump_dir, paste0('manual_do_', startyear, '-', endyear, '_v', Sys.Date(), '.csv')))
+  select(-datetime.local) %>% 
+  rename(datetime = datetime.et)%>% 
+  write.csv(., file.path(dump_dir, paste0('manual_do_', startyear, '-', endyear, '_v', Sys.Date(), '.csv')), row.names = F)

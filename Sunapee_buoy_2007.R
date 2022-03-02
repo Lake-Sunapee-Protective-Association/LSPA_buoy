@@ -418,7 +418,7 @@ range(buoy2007_L1$InstWindDir, na.rm = T)
 range(buoy2007_L1$InstWindSp, na.rm = T)
 
 wind_vert <- buoy2007_L1 %>% 
-  select(datetime, InstWindDir, InstWindSp, ) %>% 
+  select(datetime, InstWindDir, InstWindSp) %>% 
   pivot_longer(names_to = 'variable', values_to = 'value', -datetime)
 
 ggplot(wind_vert, aes(x = datetime, y = value)) +
@@ -429,6 +429,12 @@ ggplot(wind_vert, aes(x = datetime, y = value)) +
        x = NULL,
        y = NULL) +
   scale_x_datetime(date_minor_breaks = '1 month')
+
+# this wind sensor does not have a compass built in, so all data are considered errant
+
+buoy2007_L1 <- buoy2007_L1 %>% 
+  mutate(InstWindDir = NA_real_) %>% 
+  mutate(flag_winddir = 'e')
 
 # ggplot(subset(wind_vert, 
 #               subset=(datetime>=as.POSIXct('2007-08-01', tz=buoy_tz) &
@@ -532,10 +538,6 @@ ggplot(wind_vert_b, aes(x = datetime, y = value)) +
        x = NULL,
        y = NULL) +
   scale_x_datetime(date_minor_breaks = '1 month')
-
-#add errant wind dir flag
-buoy2007_L1 <- buoy2007_L1 %>% 
-  mutate(flag_winddir = 'e')
 
 #rename with CV
 buoy2007_L1 <- buoy2007_L1 %>% 
