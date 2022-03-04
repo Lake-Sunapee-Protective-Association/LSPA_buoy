@@ -187,6 +187,6 @@ endyear = format(max(manual_do$date), '%Y')
 
 manual_do %>% 
   arrange(date, depth_m) %>% 
-  select(-datetime.local) %>% 
+  select(-datetime.local, -flag_domgl, -flag_dopct) %>% 
   rename(datetime = datetime.et)%>% 
   write.csv(., file.path(dump_dir, paste0('manual_do_', startyear, '-', endyear, '_v', Sys.Date(), '.csv')), row.names = F)

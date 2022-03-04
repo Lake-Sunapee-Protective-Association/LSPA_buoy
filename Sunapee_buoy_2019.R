@@ -155,7 +155,7 @@ ggplot(buoy2019_L1, aes(x = datetime, y = TempC_0m)) +
 
 #add intermittent flag for 0m data
 buoy2019_L1 <- buoy2019_L1 %>% 
-  mutate(flag_temp_0p75m = 'i')
+  mutate(flag_temp0p75m = 'i')
 
 buoy2019_therm_vert <- buoy2019_L1 %>% 
   select(datetime, all_of(alltemp2011)) %>%
@@ -1022,7 +1022,7 @@ colnames(buoy2019_L1)
 
 #export L1 tempstring file
 buoy2019_L1 %>%
-  select(datetime, location, waterTemperature_degC_0p75m:waterTemperature_degC_9p75m, flag_temp_0p75m) %>%
+  select(datetime, location, waterTemperature_degC_0p75m:waterTemperature_degC_9p75m, flag_temp0p75m) %>%
   mutate(datetime = as.character(datetime)) %>%
   write_csv(., file.path(dump_dir,'tempstring/2019_tempstring_L1_v2022.csv'))
 

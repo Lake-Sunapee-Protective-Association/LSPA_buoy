@@ -155,7 +155,7 @@ ggplot(buoy2017_L1, aes(x = datetime, y = TempC_0m)) +
 
 #can work with that! add a flag for intermittent data
 buoy2017_L1 <- buoy2017_L1 %>% 
-  mutate(flag_temp_0p85m = 'i')
+  mutate(flag_temp0p85m = 'i')
 
 buoy2017_therm_vert <- buoy2017_L1 %>% 
   select(datetime, all_of(alltemp2011)) %>% 
@@ -543,8 +543,7 @@ buoy2017_L1 <- buoy2017_L1 %>%
             ~(case_when(datetime < as.POSIXct('2017-06-14 14:30', tz=buoy_tz)~ NA_real_,
                            TRUE ~ .))) %>% 
   mutate(location = case_when(datetime >= as.POSIXct('2017-05-19 8:00', tz=buoy_tz) & datetime < as.POSIXct('2017-05-19 8:50', tz=buoy_tz) ~ 'in transit',
-                              datetime >= as.POSIXct('2017-05-19 8:50', tz=buoy_tz) & datetime < as.POSIXct('2017-05-23 12:50', tz=buoy_tz) ~ 'harbor, water sensors offline',
-                              datetime >= as.POSIXct('2017-05-23 12:50', tz=buoy_tz) & datetime < as.POSIXct('2017-06-14 11:00', tz=buoy_tz)~ 'harbor', 
+                              datetime >= as.POSIXct('2017-05-19 8:50', tz=buoy_tz) & datetime < as.POSIXct('2017-06-14 11:00', tz=buoy_tz)~ 'harbor', 
                               datetime >= as.POSIXct('2017-06-14 11:00', tz=buoy_tz) & datetime < as.POSIXct('2017-06-14 12:10', tz=buoy_tz) ~ 'in transit',
                               datetime >= as.POSIXct('2017-06-14 12:10', tz=buoy_tz) ~ 'loon',
                               TRUE ~ location)) %>% 
