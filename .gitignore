@@ -7,7 +7,5 @@ archive/*
 from DR/*
 primarybuoy/*
 sas/*
-.docx
-.xlsx
-
-
+*.docx
+*.xlsx
