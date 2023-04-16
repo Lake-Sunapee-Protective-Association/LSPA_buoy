@@ -37,10 +37,10 @@ log_v1 <- log_v1%>% # only select necessary columns
 log_v1
 
 ## read in DO from operations log buoy v2 ----
-log_v2 <- read_xlsx(file.path(op_log, 'SUNP_MaintenanceLog_2021.xlsx'),
+log_v2_2021 <- read_xlsx(file.path(op_log, 'SUNP_MaintenanceLog_2021.xlsx'),
                     sheet = 'ManualDO')
 #format and harmonize
-log_v2 <- log_v2 %>% 
+log_v2_2021 <- log_v2_2021 %>% 
   rename(date = Date,
          depth_m = Depth,
          oxygenDissolved_mgl = DO_mgL,
@@ -51,9 +51,27 @@ log_v2 <- log_v2 %>%
          location = case_when(location == 'buoy' ~ 'loon',
                               location == '210.0' ~ '210',
                               TRUE ~ location))
-log_v2
+log_v2_2021
 
-log <- full_join(log_v1, log_v2) %>% 
+log_v2_2022 <- read_xlsx(file.path(op_log, 'SUNP_MaintenanceLog_2022.xlsx'),
+                         sheet = 'ManualDO')
+#format and harmonize
+log_v2_2022 <- log_v2_2022 %>% 
+  select(date = Date,
+         depth_m = Depth,
+         oxygenDissolved_mgl = DO_mgL,
+         oxygenDissolvedPercentOfSaturation_pct = DO_Sat,
+         waterTemperature_degC = Temp_C,
+         location = Site) %>% 
+  mutate(date = as.Date(date),
+         location = case_when(location == 'buoy' ~ 'loon',
+                              location == '210.0' ~ '210',
+                              TRUE ~ location))
+log_v2_2022
+
+## merge into one log ----
+log <- full_join(log_v1, log_v2_2021) %>% 
+  full_join(., log_v2_2022) %>% 
   arrange(date, datetime.et)
 log
 
@@ -79,17 +97,17 @@ log <- log %>%
   mutate(data_source = 'operations log')
 
 # manual do from historical record ####
-temp <- tempfile()
-download.file("https://zenodo.org/record/4652076/files/Lake-Sunapee-Protective-Association/LMP-v2020.1.zip",temp)
-LMP <- read.csv(unz(temp, "Lake-Sunapee-Protective-Association-LMP-271fcb0/master files/LSPALMP_1986-2020_v2021-03-29.csv"))
-unlink(temp)
+dir.create('tmp')
+download.file("https://raw.githubusercontent.com/Lake-Sunapee-Protective-Association/LMP/v2023.1/primary%20files/LSPALMP_1986-2022_v2023-01-22.csv",file.path('tmp', 'LMP_2023.csv'), method = 'curl')
+LMP <- read.csv(file.path('tmp', 'LMP_2023.csv'))
+unlink('tmp', recursive = T)
 
 head(LMP)
 unique(LMP$parameter)
 # format and harmonize
 do210 <- LMP %>% 
   mutate(date = as.Date(date)) %>% 
-  filter((parameter == 'temp_C'|parameter == 'DO_mgl' |parameter == 'DO_pctsat') & station == 210 & date >= as.Date('2007-01-01')) %>% 
+  filter((parameter == 'waterTemperature_degC'|parameter == 'oxygenDissolved_mgl' |parameter == 'oxygenDissolvedPercentOfSaturation_pct') & station == 210 & date >= as.Date('2007-01-01')) %>% 
   filter(depth_m < 11) %>% 
   arrange(date, depth_m)%>% 
   rename(location = station)
@@ -105,14 +123,6 @@ ggplot(do210, aes(x = date, y = value, color = depth_m, shape = flag)) +
   geom_point() +
   facet_grid(parameter ~ ., scales = 'free_y') +
   theme(legend.position = 'bottom')
-
-#add suspect flags (these will be updated in next release of LMP DO data)
-do210 <- do210 %>% 
-  mutate(flag = case_when(date == as.Date('2010-06-02') & grepl('DO', parameter, ignore.case = T) ~ 'DO values seem low',
-                          date == as.Date('2019-09-16') & grepl('DO', parameter, ignore.case = T) ~ 'DO values seem high',
-                          # parameter == 'DO_mgl' & date < as.Date('2009-01-01') & flag == '' ~ 'may be calibration issues/non-calibration',
-                          # parameter == 'DO_pctsat' & date < as.Date('2009-01-01') & flag == '' ~ 'may be calibration issues/non-calibration',
-                          TRUE ~ flag))
 
 unique(do210$flag)
 
@@ -133,15 +143,15 @@ ggplot(do210, aes(x = date, y = value, color = depth_m)) +
 
 #pivot to match manual measurements
 lmp_domgl <- do210 %>% 
-  filter(parameter == 'DO_mgl') %>% 
+  filter(parameter == 'oxygenDissolved_mgl') %>% 
   rename(oxygenDissolved_mgl = value)%>% 
   select(-parameter)
 lmp_dosat <- do210 %>% 
-  filter(parameter == 'DO_pctsat') %>% 
+  filter(parameter == 'oxygenDissolvedPercentOfSaturation_pct') %>% 
   rename(oxygenDissolvedPercentOfSaturation_pct = value)%>% 
   select(-parameter)
 lmp_temp <- do210 %>% 
-  filter(parameter == 'temp_C') %>% 
+  filter(parameter == 'waterTemperature_degC') %>% 
   rename(waterTemperature_degC = value) %>% 
   select(-parameter)
 
