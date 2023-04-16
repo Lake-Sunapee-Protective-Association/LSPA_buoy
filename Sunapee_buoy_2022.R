@@ -23,36 +23,43 @@ log_tz = 'America/New_York'
 
 ## GitHub Processes ----
 
-## download file from GH - this is a live file, we'll save a version of the file locally that has been filtered for 2023 only
-download.file('https://raw.githubusercontent.com/FLARE-forecast/SUNP-data/sunp-buoy-data/SUNP_buoy_met.csv',
-              file.path(data_dir, 'buoy_met.csv'),
-              method = 'curl')
-download.file('https://raw.githubusercontent.com/FLARE-forecast/SUNP-data/sunp-buoy-data/SUNP_buoy_wq.csv',
-              file.path(data_dir, 'buoy_wq.csv'),
-              method = 'curl')
-
-## read, filter and save file ----
-buoy2022_met_L0 = read.csv(file.path(data_dir, 'buoy_met.csv'),
-                        col.names = met2022, 
-                        skip = 3,
-                        na.strings = 'NAN') %>% 
-  mutate(datetime = ymd_hms(datetime),
-         datetime = force_tz(datetime, buoy_tz)) %>% 
-  filter(datetime >= force_tz(ymd_hms('2022-01-01 00:00:00'), buoy_tz) &
-           datetime <= force_tz(ymd_hms('2022-12-31 23:59:59'), buoy_tz))
-write.csv(buoy2022_met_L0, file.path(data_dir, 'buoy_met_L0_2022.csv'), row.names = F)
-unlink(file.path(data_dir, 'buoy_met.csv'))
-
-buoy2022_wq_L0 <- read.csv(file.path(data_dir, 'buoy_wq.csv'),
-                            col.names = buoy2022,
-                            skip = 3,
-                            na.strings = 'NAN') %>% 
-  mutate(datetime = ymd_hms(datetime),
-         datetime = force_tz(datetime, buoy_tz)) %>% 
-  filter(datetime >= force_tz(ymd_hms('2022-01-01 00:00:00'), buoy_tz) &
-           datetime <= force_tz(ymd_hms('2022-12-31 23:59:59'), buoy_tz))
-write.csv(buoy2022_wq_L0, file.path(data_dir, 'buoy_wq_L0_2022.csv'), row.names = F)
-unlink(file.path(data_dir, 'buoy_wq.csv'))
+if(!file.exists(file.path(data_dir, 'buoy_met_L0_2022.csv'))){
+  ## download file from GH - this is a live file, we'll save a version of the file locally that has been filtered for 2023 only
+  download.file('https://raw.githubusercontent.com/FLARE-forecast/SUNP-data/sunp-buoy-data/SUNP_buoy_met.csv',
+                file.path(data_dir, 'buoy_met.csv'),
+                method = 'curl')
+  download.file('https://raw.githubusercontent.com/FLARE-forecast/SUNP-data/sunp-buoy-data/SUNP_buoy_wq.csv',
+                file.path(data_dir, 'buoy_wq.csv'),
+                method = 'curl')
+  
+  ## read, filter and save file ----
+  buoy2022_met_L0 = read.csv(file.path(data_dir, 'buoy_met.csv'),
+                          col.names = met2022, 
+                          skip = 3,
+                          na.strings = 'NAN') %>% 
+    mutate(datetime = ymd_hms(datetime),
+           datetime = force_tz(datetime, buoy_tz)) %>% 
+    filter(datetime >= force_tz(ymd_hms('2022-01-01 00:00:00'), buoy_tz) &
+             datetime <= force_tz(ymd_hms('2022-12-31 23:59:59'), buoy_tz))
+  write.csv(buoy2022_met_L0, file.path(data_dir, 'buoy_met_L0_2022.csv'), row.names = F)
+  unlink(file.path(data_dir, 'buoy_met.csv'))
+  
+  buoy2022_wq_L0 <- read.csv(file.path(data_dir, 'buoy_wq.csv'),
+                              col.names = buoy2022,
+                              skip = 3,
+                              na.strings = 'NAN') %>% 
+    mutate(datetime = ymd_hms(datetime),
+           datetime = force_tz(datetime, buoy_tz)) %>% 
+    filter(datetime >= force_tz(ymd_hms('2022-01-01 00:00:00'), buoy_tz) &
+             datetime <= force_tz(ymd_hms('2022-12-31 23:59:59'), buoy_tz))
+  write.csv(buoy2022_wq_L0, file.path(data_dir, 'buoy_wq_L0_2022.csv'), row.names = F)
+  unlink(file.path(data_dir, 'buoy_wq.csv'))
+} else {
+  buoy2022_met_L0 = read.csv(file.path(data_dir, 'buoy_met_L0_2022.csv')) %>% 
+    mutate(datetime = as.POSIXct(datetime, tz = buoy_tz))
+  buoy2022_wq_L0 = read.csv(file.path(data_dir, 'buoy_wq_L0_2022.csv')) %>% 
+    mutate(datetime = as.POSIXct(datetime, tz = buoy_tz))
+}
 
 ## bring in log info ----
 
@@ -84,9 +91,12 @@ log <- log %>%
                             (instrument == 'EXO' | instrument == 'do'| instrument == 'DO') ~ 'c', #calibrate flag
                           grepl('sensor cap', notes, ignore.case = T) &
                             (instrument == 'EXO' | instrument == 'do'| instrument == 'DO') ~ 'r', #sensor cap change flag
+                          grepl('replace', notes, ignore.case = T) &
+                            (instrument == 'EXO' | instrument == 'do'| instrument == 'DO') ~ 'r', #sensor cap change flag
                           grepl('removed', notes, ignore.case = T) ~ 'R', #sensor removal
-                          grepl('move', notes, ignore.case = T) ~ 'v',
+                          grepl(' move', notes, ignore.case = T) ~ 'v',
                           grepl('RH', notes, ignore.case = T) ~ 'r',
+                          grepl('head', notes, ignore.case = T & instrument == 'PAR') ~ 'h', #sensor head replaced
                           TRUE ~ 'o'))  # sensor out of water
 
 # FORMAT DATA AND DEAL WITH TIMEZONES ----
@@ -181,7 +191,7 @@ ggplot(buoy2022_wq_L1, aes(x = datetime, y = EXO_batt_V)) +
   geom_point()
 #battery is a bit low in January, but battery really only impacts underwater sensors
 
-# 2022 wq ----
+# add flags 2022 wq and met ----
 
 #add flags from log
 #initiate columns for wq file
@@ -212,15 +222,21 @@ for(l in 1:nrow(log)){
 buoy2022_met_L1$flag_allmet = ''
 
 for(l in 1:nrow(log)){
-  if (log$data_table[l] == 'met') {
+  if (log$data_table[l] == 'met' | log$data_table[l] == 'all met') {
     buoy2022_met_L1 <- buoy2022_met_L1 %>% 
       mutate(flag_allmet = case_when(datetime >= log$TIMESTAMP_start[l] &
                                        datetime <= log$TIMESTAMP_end[l] ~ log$flag[l],
                                      TRUE ~ flag_allmet))
-  } else {
+  } else if (log$data_table[l] == 'PAR') {
+      buoy2022_met_L1 <- buoy2022_met_L1 %>% 
+        mutate(flag_allmet = case_when(datetime >= log$TIMESTAMP_start[l] &
+                                         datetime <= log$TIMESTAMP_end[l] ~ log$flag[l],
+                                       TRUE ~ flag_allmet))
   }
 }
 
+
+# and clean 22 wq: ----
 
 ## thermistors ----
 
@@ -821,10 +837,6 @@ ggplot(buoy2022_wq_L1, aes(x = datetime, y = location)) +
 
 # 2022 Met data ----
 
-# filter data from launch
-buoy2022_met_L1 <- buoy2022_met_L1 %>% 
-  filter(datetime >= redeploy_exact) 
-
 # get location from wq data and apply to met
 first_loon = first(buoy2022_wq_L1$datetime[buoy2022_wq_L1$location == 'loon'])
 first_intransit = first(buoy2022_wq_L1$datetime[buoy2022_wq_L1$location == 'in transit'])
@@ -845,17 +857,18 @@ buoy2022_met_L1 <- buoy2022_met_L1 %>%
 #look at flags
 unique(buoy2022_met_L1$flag_allmet)
 
-#only r needs to be recoded - this is when the rh chip was changed
+# flag is 'v' for moved, which has already been recoded above.
+# flag 'h' is for new PAR head, which should be recoded, though there is probably no data during this time
 buoy2022_met_L1 <- buoy2022_met_L1 %>% 
-  mutate_at(all_of(met),
-            ~ case_when(flag_allmet == 'r' ~ NA_real_,
+  mutate_at(vars(PAR_ave_umolpspm2, PAR_tot_mmolpm2),
+            ~ case_when(flag_allmet == 'h' ~ NA_real_,
                         TRUE ~ .))
+
 
 
 #plotting all of the met data at same time takes too long - only plot by data group
 
 ## air temp and rel hum ----
-
 buoy_temp_vert <- buoy2022_met_L1 %>% 
   select(datetime, all_of(air), location) %>% 
   pivot_longer(names_to = 'variable', 
@@ -867,7 +880,8 @@ for(i in 1:length(months)) {
   chunk <- buoy_temp_vert %>% 
     filter(datetime >= as.POSIXct(months[i], tz= buoy_tz) &
              datetime < (as.POSIXct(months[i], tz=buoy_tz) + dmonths(1)))
-  ggplot(chunk, aes(x = datetime, y = value, color = location)) +
+  if(nrow(chunk>0)){
+    ggplot(chunk, aes(x = datetime, y = value, color = location)) +
     geom_point() +
     facet_grid(variable ~ ., scales = 'free_y') +
     scale_x_datetime(date_minor_breaks = '1 day') +
@@ -876,9 +890,11 @@ for(i in 1:length(months)) {
          y = NULL,
          title = paste0('LSPA buoy Air Temp RH ', format(months[i], '%B')))
   ggsave(filename = paste0('graphs/2022/L0_airRH_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+  }
 }
 
-#data look good
+#data look good!
+
 
 ## wind ----
 buoy_wind_vert <- buoy2022_met_L1 %>% 
@@ -892,30 +908,70 @@ for(i in 1:length(months)) {
   chunk <- buoy_wind_vert %>% 
     filter(datetime >= as.POSIXct(months[i], tz= buoy_tz) &
              datetime < (as.POSIXct(months[i], tz=buoy_tz) + dmonths(1)))
-  ggplot(chunk, aes(x = datetime, y = value, color = location)) +
-    geom_point() +
-    facet_grid(variable ~ ., scales = 'free_y') +
-    scale_x_datetime(date_minor_breaks = '1 day') +
-    final_theme +
-    labs(x = NULL,
-         y = NULL,
-         title = paste0('LSPA buoy wind ', format(months[i], '%B')))
-  ggsave(filename = paste0('graphs/2022/L0_wind_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+  if(nrow(chunk>0)){
+    ggplot(chunk, aes(x = datetime, y = value, color = location)) +
+      geom_point() +
+      facet_grid(variable ~ ., scales = 'free_y') +
+      scale_x_datetime(date_minor_breaks = '1 day') +
+      final_theme +
+      labs(x = NULL,
+           y = NULL,
+           title = paste0('LSPA buoy wind ', format(months[i], '%B')))
+    ggsave(filename = paste0('graphs/2022/L0_wind_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+  }
 }
 
-#sensor frozen nov 26- nov29
+#need to look more closely at nov and dec 
+biweekly = seq.Date(as.Date('2022-11-01'), as.Date('2023-01-01'), by = '2 weeks')
+# plot monthly
+for(i in 1:length(biweekly)) {
+  chunk <- buoy_wind_vert %>% 
+    filter(datetime >= as.POSIXct(biweekly[i], tz= buoy_tz) &
+             datetime < (as.POSIXct(biweekly[i], tz=buoy_tz) + weeks(2)))
+  if(nrow(chunk>0)){
+    ggplot(chunk, aes(x = datetime, y = value, color = location)) +
+      geom_point() +
+      facet_grid(variable ~ ., scales = 'free_y') +
+      scale_x_datetime(date_minor_breaks = '1 day') +
+      final_theme +
+      labs(x = NULL,
+           y = NULL,
+           title = paste0('LSPA buoy wind ', biweekly[i]))
+    ggsave(filename = paste0('graphs/2022/L0_wind_endofseason_biweekly_', biweekly[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+  }
+}
+
+#sensor frozen jan 7-9
 buoy2022_met_L1 <- buoy2022_met_L1 %>% 
   mutate_at(all_of(wind),
-            ~case_when(datetime >= as.POSIXct('2022-11-26', tz = buoy_tz) &
-                         datetime < as.POSIXct('2022-11-30', tz = buoy_tz) &
+            ~case_when(datetime >= as.POSIXct('2022-01-07', tz = buoy_tz) &
+                         datetime < as.POSIXct('2022-01-10', tz = buoy_tz) &
                          MaxWindSp == 0 ~ NA_real_, 
                        TRUE ~ .))
 
-#sensor frozen dec 25- dec29
+
+#sensor frozen feb 4-5
 buoy2022_met_L1 <- buoy2022_met_L1 %>% 
   mutate_at(all_of(wind),
-            ~case_when(datetime >= as.POSIXct('2022-12-25', tz = buoy_tz) &
-                         datetime < as.POSIXct('2022-12-30', tz = buoy_tz) &
+            ~case_when(datetime >= as.POSIXct('2022-02-04', tz = buoy_tz) &
+                         datetime < as.POSIXct('2022-02-06', tz = buoy_tz) &
+                         MaxWindSp == 0 ~ NA_real_, 
+                       TRUE ~ .))
+
+
+#sensor frozen mar 9-10
+buoy2022_met_L1 <- buoy2022_met_L1 %>% 
+  mutate_at(all_of(wind),
+            ~case_when(datetime >= as.POSIXct('2022-03-09', tz = buoy_tz) &
+                         datetime < as.POSIXct('2022-03-11', tz = buoy_tz) &
+                         AveWindDir == 0 ~ NA_real_, 
+                       TRUE ~ .))
+
+#sensor frozen dec 17
+buoy2022_met_L1 <- buoy2022_met_L1 %>% 
+  mutate_at(all_of(wind),
+            ~case_when(datetime >= as.POSIXct('2022-12-17', tz = buoy_tz) &
+                         datetime < as.POSIXct('2022-12-18', tz = buoy_tz) &
                          MaxWindSp == 0 ~ NA_real_, 
                        TRUE ~ .))
 
@@ -930,15 +986,17 @@ for(i in 1:length(months)) {
   chunk <- buoy_wind_vert %>% 
     filter(datetime >= as.POSIXct(months[i], tz= buoy_tz) &
              datetime < (as.POSIXct(months[i], tz=buoy_tz) + dmonths(1)))
-  ggplot(chunk, aes(x = datetime, y = value, color = location)) +
-    geom_point() +
-    facet_grid(variable ~ ., scales = 'free_y') +
-    scale_x_datetime(date_minor_breaks = '1 day') +
-    final_theme +
-    labs(x = NULL,
-         y = NULL,
-         title = paste0('LSPA buoy wind ', format(months[i], '%B')))
-  ggsave(filename = paste0('graphs/2022/L1_wind_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+  if(nrow(chunk)>0){
+    ggplot(chunk, aes(x = datetime, y = value, color = location)) +
+      geom_point() +
+      facet_grid(variable ~ ., scales = 'free_y') +
+      scale_x_datetime(date_minor_breaks = '1 day') +
+      final_theme +
+      labs(x = NULL,
+           y = NULL,
+           title = paste0('LSPA buoy wind ', format(months[i], '%B')))
+    ggsave(filename = paste0('graphs/2022/L1_wind_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+  }
 }
 
 ## PAR ----
@@ -946,7 +1004,7 @@ range(buoy2022_met_L1$PAR_ave_umolpspm2, na.rm = T)
 range(buoy2022_met_L1$PAR_tot_mmolpm2, na.rm = T)
 
 buoy_par_vert <- buoy2022_met_L1 %>% 
-  select(datetime, all_of(par2022), location) %>% 
+  select(datetime, all_of(par2021), location) %>% 
   pivot_longer(names_to = 'variable', 
                values_to =  'value', 
                -c(datetime, location))
@@ -974,25 +1032,15 @@ for(i in 1:length(months)) {
   ggsave(filename = paste0('graphs/2022/L0_PAR_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
 }
 
-#looks like sensor obscured end of nov and end-mid dec
-
-#nov 27- nov 30
-#dec 25- 28
-
-buoy2022_met_L1 <- buoy2022_met_L1 %>% 
-  mutate(flag_par = case_when(datetime >= as.POSIXct('2022-11-27', tz =buoy_tz) &
-                                datetime <= as.POSIXct('2022-12-01', tz = buoy_tz) ~ 'o', 
-                              datetime >= as.POSIXct('2022-12-25', tz =buoy_tz) &
-                                datetime <= as.POSIXct('2022-12-29', tz = buoy_tz) ~ 'o', 
-                              TRUE ~ ''))
-
+#data look pretty good, but we still have night time par issues
+buoy2022_met_L1$flag_par = ''
 # still have par >0 at night issue. flagging all PAR data 
 buoy2022_met_L1 <- buoy2022_met_L1 %>% 
   mutate(flag_par = case_when(flag_par == '' ~ 'n',
                               TRUE ~ paste0('n; ', flag_par)))
 
 buoy_par_vert <- buoy2022_met_L1 %>% 
-  select(datetime, all_of(par2022), location, flag_par) %>% 
+  select(datetime, all_of(par2021), location, flag_par) %>% 
   pivot_longer(names_to = 'variable', 
                values_to =  'value', 
                -c(datetime, location, flag_par))
@@ -1110,17 +1158,17 @@ colnames(buoy2022_met_L1)
 unique(buoy2022_met_L1$flag_allmet)
 unique(buoy2022_met_L1$flag_par)
 
-# apply the 'r' flag from all met to rh
+# apply the 'h' flag from all met to flag_par
 buoy2022_met_L1 <- buoy2022_met_L1 %>% 
-  mutate(flag_rh = case_when(flag_allmet == 'r' ~ 'r',
-                             TRUE ~ ''))
+  mutate(flag_par = case_when(flag_allmet == 'h' ~ paste(flag_par, 'h', sep = '; '),
+                             TRUE ~ flag_par))
 
 #export l1 met file
 buoy2022_met_L1 %>%
   select(datetime, 
-         airTemperature_degC, relativeHumidity_perc, flag_rh,
+         airTemperature_degC, relativeHumidity_perc, 
          radiationIncomingPARAverage_mmolm2s, radiationIncomingPARTotal_mmolm2, flag_par,
          winddirectionInstantaneous_deg:windDirectionAverage_deg,
          location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., file.path(dump_dir, 'met/2022b_met_L1_v2022.csv'))
+  write_csv(., file.path(dump_dir, 'met/2022_met_L1_v2022.csv'))
