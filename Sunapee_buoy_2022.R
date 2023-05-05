@@ -1115,7 +1115,7 @@ unique(buoy2022_wq_L1$flag_alltemp) #these are fine to drop
 buoy2022_wq_L1 %>%
   select(datetime, waterTemperature_degC_0p1m:waterTemperature_degC_10m, location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., file.path(dump_dir, 'tempstring/2022_tempstring_L1_v2022.csv'))
+  write_csv(., file.path(dump_dir, 'tempstring/2022_tempstring_L1_v2023.csv'))
 
 #export l1 exo file
 unique(buoy2022_wq_L1$flag_exochl)
@@ -1134,7 +1134,7 @@ buoy2022_wq_L1 %>%
          specificConductance_mScm_1m, flag_exocond,
          location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., file.path(dump_dir, 'exo/2022_exo_L1_v2022.csv'))
+  write_csv(., file.path(dump_dir, 'exo/2022_exo_L1_v2023.csv'))
 
 #export l1 do file
 unique(buoy2022_wq_L1$flag_do10m)
@@ -1149,7 +1149,7 @@ buoy2022_wq_L1 %>%
          flag_do10m, 
          location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., file.path(dump_dir, 'do/2022_do_L1_v2022.csv'))
+  write_csv(., file.path(dump_dir, 'do/2022_do_L1_v2023.csv'))
 
 
 ## Met Data ----
@@ -1171,4 +1171,4 @@ buoy2022_met_L1 %>%
          winddirectionInstantaneous_deg:windDirectionAverage_deg,
          location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., file.path(dump_dir, 'met/2022_met_L1_v2022.csv'))
+  write_csv(., file.path(dump_dir, 'met/2022_met_L1_v2023.csv'))
