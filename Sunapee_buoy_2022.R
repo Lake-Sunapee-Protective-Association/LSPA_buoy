@@ -1093,7 +1093,7 @@ buoy2022_wq_L1 <- buoy2022_wq_L1 %>%
 
 colnames(buoy2022_met_L1)
 buoy2022_met_L1 <- buoy2022_met_L1 %>% 
-  rename(winddirectionInstantaneous_deg = WindDir,
+  rename(windDirectionInstantaneous_deg = WindDir,
          windDirectionAverage_deg = AveWindDir,
          windSpeedAverage_mps = AveWindSp,
          windGustDirection_deg = MaxWindDir,
@@ -1164,11 +1164,18 @@ buoy2022_met_L1 <- buoy2022_met_L1 %>%
                              TRUE ~ flag_par))
 
 #export l1 met file
-buoy2022_met_L1 %>%
+# note, it appears there are restrictions on the sizes of files for EDI upload. We must break this file into two parts so that the EML loads correctly
+buoy2022_met_L1 = buoy2022_met_L1 %>%
   select(datetime, 
          airTemperature_degC, relativeHumidity_perc, 
          radiationIncomingPARAverage_mmolm2s, radiationIncomingPARTotal_mmolm2, flag_par,
-         winddirectionInstantaneous_deg:windDirectionAverage_deg,
+         windDirectionInstantaneous_deg:windDirectionAverage_deg,
          location) %>%
-  mutate(datetime = as.character(datetime)) %>%
-  write_csv(., file.path(dump_dir, 'met/2022_met_L1_v2022.csv'))
+  mutate(datetime = as.character(datetime)) 
+buoy2022_met_L1 %>%
+  filter(datetime < as.Date('2022-07-01')) %>% 
+  write_csv(., file.path(dump_dir, 'met/2022a_met_L1_v2023.csv'))
+
+buoy2022_met_L1 %>%
+  filter(datetime >= as.Date('2022-07-01')) %>% 
+  write_csv(., file.path(dump_dir, 'met/2022b_met_L1_v2023.csv'))
