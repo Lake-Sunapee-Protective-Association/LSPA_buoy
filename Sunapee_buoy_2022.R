@@ -1004,7 +1004,7 @@ range(buoy2022_met_L1$PAR_ave_umolpspm2, na.rm = T)
 range(buoy2022_met_L1$PAR_tot_mmolpm2, na.rm = T)
 
 buoy_par_vert <- buoy2022_met_L1 %>% 
-  select(datetime, all_of(par2021), location) %>% 
+  select(datetime, all_of(par2022), location) %>% 
   pivot_longer(names_to = 'variable', 
                values_to =  'value', 
                -c(datetime, location))
@@ -1040,7 +1040,7 @@ buoy2022_met_L1 <- buoy2022_met_L1 %>%
                               TRUE ~ paste0('n; ', flag_par)))
 
 buoy_par_vert <- buoy2022_met_L1 %>% 
-  select(datetime, all_of(par2021), location, flag_par) %>% 
+  select(datetime, all_of(par2022), location, flag_par) %>% 
   pivot_longer(names_to = 'variable', 
                values_to =  'value', 
                -c(datetime, location, flag_par))
@@ -1115,7 +1115,7 @@ unique(buoy2022_wq_L1$flag_alltemp) #these are fine to drop
 buoy2022_wq_L1 %>%
   select(datetime, waterTemperature_degC_0p1m:waterTemperature_degC_10m, location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., file.path(dump_dir, 'tempstring/2022_tempstring_L1_v2022.csv'))
+  write_csv(., file.path(dump_dir, 'tempstring/2022_tempstring_L1_v2023.csv'))
 
 #export l1 exo file
 unique(buoy2022_wq_L1$flag_exochl)
@@ -1134,7 +1134,7 @@ buoy2022_wq_L1 %>%
          specificConductance_mScm_1m, flag_exocond,
          location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., file.path(dump_dir, 'exo/2022_exo_L1_v2022.csv'))
+  write_csv(., file.path(dump_dir, 'exo/2022_exo_L1_v2023.csv'))
 
 #export l1 do file
 unique(buoy2022_wq_L1$flag_do10m)
@@ -1149,7 +1149,7 @@ buoy2022_wq_L1 %>%
          flag_do10m, 
          location) %>%
   mutate(datetime = as.character(datetime)) %>%
-  write_csv(., file.path(dump_dir, 'do/2022_do_L1_v2022.csv'))
+  write_csv(., file.path(dump_dir, 'do/2022_do_L1_v2023.csv'))
 
 
 ## Met Data ----
