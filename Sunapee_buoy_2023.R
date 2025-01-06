@@ -44,9 +44,9 @@ if(!file.exists(file.path(data_dir, 'buoy_met_L0_2023.csv'))){
   
   ## read, filter and save file ----
   buoy2023_met_L0 = read.csv(file.path(data_dir, 'buoy_met.csv'),
-                          col.names = met2021, 
-                          skip = 3,
-                          na.strings = 'NAN') %>% 
+                             col.names = met2021, 
+                             skip = 3,
+                             na.strings = 'NAN') %>% 
     mutate(datetime = ymd_hms(datetime),
            datetime = force_tz(datetime, buoy_tz)) %>% 
     filter(datetime >= force_tz(ymd_hms('2023-01-01 00:00:00'), buoy_tz) &
@@ -55,9 +55,9 @@ if(!file.exists(file.path(data_dir, 'buoy_met_L0_2023.csv'))){
   unlink(file.path(data_dir, 'buoy_met.csv'))
   
   buoy2023_wq_L0 <- read.csv(file.path(data_dir, 'buoy_wq.csv'),
-                              col.names = buoy2021,
-                              skip = 3,
-                              na.strings = 'NAN') %>% 
+                             col.names = buoy2021,
+                             skip = 3,
+                             na.strings = 'NAN') %>% 
     mutate(datetime = ymd_hms(datetime),
            datetime = force_tz(datetime, buoy_tz)) %>% 
     filter(datetime >= force_tz(ymd_hms('2023-01-01 00:00:00'), buoy_tz) &
@@ -74,7 +74,7 @@ if(!file.exists(file.path(data_dir, 'buoy_met_L0_2023.csv'))){
 ## bring in log info ----
 
 log <- read_xlsx(file.path(log_dir, 'SUNP_MaintenanceLog_2023.xlsx'),
-                  sheet = 'MaintenanceLog')
+                 sheet = 'MaintenanceLog')
 
 ### log ----
 log <- log %>% 
@@ -215,8 +215,8 @@ for(l in 1:nrow(log)){
   } else if (log$instrument[l] == 'do' | log$instrument[l] == 'DO') {
     buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
       mutate(flag_do10m = case_when(datetime >= log$TIMESTAMP_start[l] &
-                                        datetime <= log$TIMESTAMP_end[l] ~ log$flag[l], 
-                                      TRUE ~ flag_do10m))
+                                      datetime <= log$TIMESTAMP_end[l] ~ log$flag[l], 
+                                    TRUE ~ flag_do10m))
   } else if (log$instrument[l] == 'temp') {
     buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
       mutate(flag_alltemp = case_when(datetime >= log$TIMESTAMP_start[l] &
@@ -235,25 +235,21 @@ for(l in 1:nrow(log)){
                                        datetime <= log$TIMESTAMP_end[l] ~ log$flag[l],
                                      TRUE ~ flag_allmet))
   } else if (log$data_table[l] == 'PAR') {
-      buoy2023_met_L1 <- buoy2023_met_L1 %>% 
-        mutate(flag_allmet = case_when(datetime >= log$TIMESTAMP_start[l] &
-                                         datetime <= log$TIMESTAMP_end[l] ~ log$flag[l],
-                                       TRUE ~ flag_allmet))
+    buoy2023_met_L1 <- buoy2023_met_L1 %>% 
+      mutate(flag_allmet = case_when(datetime >= log$TIMESTAMP_start[l] &
+                                       datetime <= log$TIMESTAMP_end[l] ~ log$flag[l],
+                                     TRUE ~ flag_allmet))
   }
 }
 
 
-# and clean 23 wq: ----
+# CLEAN 2023 WQ ----
 
 ## thermistors ----
 
-#recode as necessary from log
+# recode as necessary from log
 unique(buoy2023_wq_L1$flag_alltemp)
-buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
-  mutate_at(vars(all_of(alltemp)),
-            ~ case_when(flag_alltemp == 'o' ~ NA_real_, 
-                        flag_alltemp == 'R' ~ NA_real_, #all flags indicate that sensors were out of the water
-                        TRUE ~ .))
+# no flags to recode
 
 buoy_therm_vert <- buoy2023_wq_L1 %>% 
   select(datetime, flag_alltemp, all_of(alltemp)) %>% 
@@ -261,71 +257,72 @@ buoy_therm_vert <- buoy2023_wq_L1 %>%
                values_to = 'values', 
                -c(datetime,flag_alltemp))
 
-#recode record prior to buoy deploy
+# recode record prior to buoy deploy
 redeploy = force_tz(ymd_hms("2023-05-15 10:30:00"), buoy_tz)
 
-#need to find remove date
+# need to find remove date
 buoy_therm_vert %>% 
   filter(between(datetime, ymd('2023-11-01'), ymd('2023-11-07'))) %>% 
   ggplot(., aes(x = datetime, y = values, color = variable)) +
   geom_point() +
   scale_x_datetime(date_minor_breaks = '1 day')
+
 buoy_therm_vert %>% 
   filter(between(datetime, ymd('2023-11-06'), ymd('2023-11-07'))) %>% 
   ggplot(., aes(x = datetime, y = values, color = variable)) +
   geom_point() +
   scale_x_datetime(date_minor_breaks = '1 hour')
+
 # removal 2024-11-06 09:00
-remove = force_tz(ymd_hms("2023-11-06 09:00:00"), buoy_tz)
+remove = ymd_hms("2023-11-06 09:00:00", tz = buoy_tz)
 
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
   mutate(across(all_of(alltemp),
                 ~ case_when(datetime <= redeploy ~ NA_real_,
                             datetime >= remove ~ NA_real_,
                             TRUE ~ .)))
-         
+
 buoyb_therm_vert <- buoy2023_wq_L1 %>% 
   select(datetime, flag_alltemp, all_of(alltemp)) %>% 
   pivot_longer(names_to = 'variable',
                values_to = 'values', 
-               -c(datetime,flag_alltemp))
+               -c(datetime,flag_alltemp)) %>% 
+  filter(!is.na(values))
 
 ggplot(buoyb_therm_vert, aes(x = datetime, y = values, color = variable)) +
   geom_point() +
   final_theme
 
-#look at data on a monthly basis
-months = c(seq.Date(as.Date('2023-01-01'), as.Date('2024-01-01'), '2 weeks'))
+#look at data on a bi-monthly basis
+two_weeks = c(seq.Date(as.Date('2023-01-01'), as.Date('2024-01-01'), '2 weeks'))
 
-#plot data in monthly iterations
-for(i in 1:length(months)) {
-  chunk <- buoy2023_wq_L1 %>% 
-    filter(datetime >= force_tz(ymd(months[i]), buoy_tz) &
-             datetime < force_tz((ymd(months[i]) + weeks(2)), tz=buoy_tz))
-  chunk_vert <- chunk %>% 
-    select(datetime, all_of(alltemp)) %>%
-    pivot_longer(names_to = 'variable', 
-                 values_to = 'value', 
-                 -datetime)
-  ggplot(chunk_vert, aes(x = datetime, y = value, color = variable)) +
-    geom_point() +
-    scale_x_datetime(date_minor_breaks = '1 day') +
-    scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
-                                "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
-    final_theme +
-    labs(x = NULL,
-         y = NULL,
-         title = paste0('LSPA temp variables ', format(months[i], '%B')))
-  ggsave(filename = paste0('graphs/2023/L0_temp_2wk_', months[i], '.jpg'), 
-         height = 8, width =10, units = 'in', dpi = 300)
+#plot data in bi-monthly iterations
+for(i in 1:length(two_weeks)) {
+  chunk <- buoyb_therm_vert %>% 
+    filter(datetime >= force_tz(ymd(two_weeks[i]), buoy_tz) &
+             datetime < force_tz((ymd(two_weeks[i]) + weeks(2)), tz=buoy_tz))
+  if (nrow(chunk) > 0) {
+    ggplot(chunk_vert, aes(x = datetime, y = values, color = variable)) +
+      geom_point() +
+      scale_x_datetime(date_minor_breaks = '1 day') +
+      scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
+                                  "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
+      final_theme +
+      labs(x = NULL,
+           y = NULL,
+           title = paste0('LSPA temp variables ', format(two_weeks[i], '%B')))
+    ggsave(filename = paste0('graphs/2023/L0_temp_2wk_', two_weeks[i], '.jpg'), 
+           height = 8, width =10, units = 'in', dpi = 300)
+  }
 }
 
 unique(buoy2023_wq_L1$location)
+
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
   mutate_at(vars(all_of(alltemp)),
             ~ case_when(datetime < redeploy ~ NA_real_,
                         TRUE ~ .)) %>% 
-  mutate(location = if_else(datetime >= redeploy, 'loon', NA_character_))
+  mutate(location = if_else(datetime >= redeploy, 'loon', location))
 
 buoyb_therm_vert <- buoy2023_wq_L1 %>% 
   select(datetime, flag_alltemp, all_of(alltemp)) %>% 
@@ -346,7 +343,28 @@ buoyb_therm_vert %>%
 rm(buoyb_therm_vert)
 
 
+#plot data in bi-monthly iterations
+for(i in 1:length(two_weeks)) {
+  chunk <- buoyb_therm_vert %>% 
+    filter(datetime >= force_tz(ymd(two_weeks[i]), buoy_tz) &
+             datetime < force_tz((ymd(two_weeks[i]) + weeks(2)), tz=buoy_tz))
+  if (nrow(chunk) > 0) {
+    ggplot(chunk_vert, aes(x = datetime, y = values, color = variable)) +
+      geom_point() +
+      scale_x_datetime(date_minor_breaks = '1 day') +
+      scale_color_manual(values=c("#000000", "#999999", "#997300", "#ffbf00", "#173fb5", "#a5b8f3", "#004d13",
+                                  "#00e639", "#d4c711", "#0081cc", "#66c7ff")) +
+      final_theme +
+      labs(x = NULL,
+           y = NULL,
+           title = paste0('LSPA temp variables ', format(two_weeks[i], '%B')))
+    ggsave(filename = paste0('graphs/2023/L1_temp_2wk_', two_weeks[i], '.jpg'), 
+           height = 8, width = 10, units = 'in', dpi = 300)
+  }
+}
+
 ## exo ----
+
 #recode as necessary from log
 unique(buoy2023_wq_L1$flag_allexo)
 
@@ -355,13 +373,12 @@ buoy2023_wq_L1 <- buoy2023_wq_L1 %>%
             ~ case_when(flag_allexo != '' ~ NA_real_,# all flags should be recoded
                         TRUE ~ .))
 
-# quick look at temp
+# quick look at exo sensor temp
 ggplot(buoy2023_wq_L1, aes(x = datetime, y = EXOTempC)) +
   geom_point()
 ggplot(buoy2023_wq_L1, aes(x = datetime, y = DOLowTempC)) +
   geom_point()
-# some issue in May - that's likely when the DO was swapped with the EXo at 1m
-# and again after data gap and end of record.
+# some issue in May/Jun and again at re-deploy of sensor
 
 #recode record prior to buoy deploy
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
@@ -373,7 +390,8 @@ buoyb_exo_vert <- buoy2023_wq_L1 %>%
   select(datetime, flag_allexo, all_of(exo)) %>% 
   pivot_longer(names_to = 'variable',
                values_to = 'values', 
-               -c(datetime,flag_allexo))
+               -c(datetime,flag_allexo)) %>% 
+  filter(!is.na(values))
 
 ggplot(buoyb_exo_vert, aes(x = datetime, y = values, shape = flag_allexo)) +
   geom_point() +
@@ -389,7 +407,8 @@ buoyb_exo_vert <- buoy2023_wq_L1 %>%
   select(datetime, flag_allexo, all_of(exo)) %>% 
   pivot_longer(names_to = 'variable',
                values_to = 'values', 
-               -c(datetime,flag_allexo))
+               -c(datetime,flag_allexo)) %>% 
+  filter(!is.na(values))
 
 ggplot(buoyb_exo_vert, aes(x = datetime, y = values, shape = flag_allexo)) +
   geom_point() +
@@ -414,11 +433,16 @@ buoy2023_wq_L1 <- buoy2023_wq_L1 %>%
             ~ case_when(datetime >= exo_eor ~ NA_real_,
                         TRUE ~ .))
 
+# add location as offline starting at exo_eor
+buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
+  mutate(location = if_else(datetime >= exo_eor, "offline", location))
+
 buoyb_exo_vert <- buoy2023_wq_L1 %>% 
   select(datetime, flag_allexo, all_of(exo)) %>% 
   pivot_longer(names_to = 'variable',
                values_to = 'values', 
-               -c(datetime,flag_allexo))
+               -c(datetime,flag_allexo)) %>% 
+  filter(!is.na(values))
 
 ggplot(buoyb_exo_vert, aes(x = datetime, y = values, shape = flag_allexo)) +
   geom_point() +
@@ -426,27 +450,36 @@ ggplot(buoyb_exo_vert, aes(x = datetime, y = values, shape = flag_allexo)) +
   final_theme
 
 # plot bi-weekly
-for(i in 1:length(months)) {
-  chunk <- buoy2023_wq_L1 %>% 
-    filter(datetime >= force_tz(as.POSIXct(months[i]), tzone = buoy_tz) &
-             datetime < (force_tz(as.POSIXct(months[i]), tzone = buoy_tz) + weeks(2)))
-  chunk_vert <- chunk %>% 
-    select(datetime, all_of(exo)) %>%
-    pivot_longer(names_to = 'variable', 
-                 values_to = 'value', 
-                 -datetime)
-  ggplot(chunk_vert, aes(x = datetime, y = value)) +
-    geom_point() +
-    facet_grid(variable ~ ., scales = 'free_y') +
-    scale_x_datetime(date_minor_breaks = '1 day') +
-    final_theme +
-    labs(x = NULL,
-         y = NULL,
-         title = paste0('LSPA exo variables ', format(months[i], '%B')))
-  ggsave(filename = paste0('graphs/2023/L0_exo_2wks_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+for(i in 1:length(two_weeks)) {
+  chunk <- buoyb_exo_vert %>% 
+    filter(datetime >= force_tz(as.POSIXct(two_weeks[i]), tzone = buoy_tz) &
+             datetime < (force_tz(as.POSIXct(two_weeks[i]), tzone = buoy_tz) + weeks(2)))
+  if (nrow(chunk) > 0) {
+    ggplot(chunk, aes(x = datetime, y = values)) +
+      geom_point() +
+      facet_grid(variable ~ ., scales = 'free_y') +
+      scale_x_datetime(date_minor_breaks = '1 day') +
+      final_theme +
+      labs(x = NULL,
+           y = NULL,
+           title = paste0('LSPA exo variables ', format(two_weeks[i], '%B')))
+    ggsave(filename = paste0('graphs/2023/L0_exo_2wks_', two_weeks[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+  }
 }
 
-# chla flier on Jul 12
+#### chla flier on May 26 ----
+# flag chla > 1 on May 26
+inspect = as_date('2023-05-26')
+
+buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
+  mutate(flag_exochl = if_else(Chlor_RFU > 1 & 
+                                 datetime >= inspect &
+                                 datetime < (inspect + days(1)),
+                               's',
+                               ''))
+
+#### chla flier on Jul 12 ----
+
 inspect = as_date('2023-07-12')
 buoyb_exo_vert %>% 
   filter(datetime >= inspect &
@@ -463,8 +496,32 @@ buoy2023_wq_L1 <- buoy2023_wq_L1 %>%
             ~ case_when(datetime == as.POSIXct(recode_dt, tz = buoy_tz) ~ NA_real_,
                         TRUE ~ .))
 
+buoyb_exo_vert <- buoy2023_wq_L1 %>% 
+  select(datetime, flag_allexo, all_of(exo)) %>% 
+  pivot_longer(names_to = 'variable',
+               values_to = 'values', 
+               -c(datetime,flag_allexo)) %>% 
+  filter(!is.na(values))
 
-# bga flier jul 16
+buoyb_exo_vert %>% 
+  filter(datetime >= inspect &
+           datetime < (inspect + days(1))) %>% 
+  ggplot(., aes(x = datetime, y = values, shape = flag_allexo)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  final_theme
+
+# flag chlor high value on this date > 2
+buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
+  mutate(flag_exochl = if_else(Chlor_RFU > 2 & 
+                                 datetime >= inspect &
+                                 datetime < (inspect + days(1)),
+                               's',
+                               flag_exochl))
+
+
+
+#### bga flier jul 16 ----
 inspect = as_date('2023-07-16')
 buoyb_exo_vert %>% 
   filter(datetime >= inspect &
@@ -477,12 +534,26 @@ buoyb_exo_vert %>%
 recode_dt = '2023-07-16 20:30'
 
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
-  mutate_at(vars(all_of(exochla)),
+  mutate_at(vars(all_of(exobga)),
             ~ case_when(datetime == as.POSIXct(recode_dt, tz = buoy_tz) ~ NA_real_,
                         TRUE ~ .))
 
+buoyb_exo_vert <- buoy2023_wq_L1 %>% 
+  select(datetime, flag_allexo, all_of(exo)) %>% 
+  pivot_longer(names_to = 'variable',
+               values_to = 'values', 
+               -c(datetime,flag_allexo)) %>% 
+  filter(!is.na(values))
 
-# chla flier jul 18
+buoyb_exo_vert %>% 
+  filter(datetime >= inspect &
+           datetime < (inspect + days(1))) %>% 
+  ggplot(., aes(x = datetime, y = values, shape = flag_allexo)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  final_theme
+
+#### chla flier jul 18 ----
 
 inspect = as_date('2023-07-18')
 buoyb_exo_vert %>% 
@@ -493,7 +564,7 @@ buoyb_exo_vert %>%
   facet_grid(variable ~ ., scales = "free_y") +
   scale_x_datetime(date_minor_breaks = '1 hour') +
   final_theme
-recode_dt = '2023-07-18 14:30'
+recode_dt = '2023-07-18 14:40'
 
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
   mutate_at(vars(all_of(exochla)),
@@ -508,7 +579,38 @@ buoy2023_wq_L1 <- buoy2023_wq_L1 %>%
                                's',
                                ''))
 
-# bga flag aug 14/15 > 0.1 suspect
+buoyb_exo_vert <- buoy2023_wq_L1 %>% 
+  select(datetime, flag_allexo, all_of(exo)) %>% 
+  pivot_longer(names_to = 'variable',
+               values_to = 'values', 
+               -c(datetime,flag_allexo)) %>% 
+  filter(!is.na(values))
+
+buoyb_exo_vert %>% 
+  filter(datetime >= inspect &
+           datetime < (inspect + days(1))) %>% 
+  ggplot(., aes(x = datetime, y = values, shape = flag_allexo)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  final_theme
+
+# flag chlor rfu > 3
+buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
+  mutate(flag_exochl = if_else(Chlor_RFU > 3 & 
+                                 datetime >= inspect &
+                                 datetime < (inspect + days(1)),
+                               's',
+                               flag_exochl))
+
+# flag bga > 0.3 as suspect on this date
+buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
+  mutate(flag_exobga = if_else(BGAPC_RFU > 0.3 & 
+                                 datetime >= inspect &
+                                 datetime < (inspect + days(1)),
+                               's',
+                               flag_exobga))
+
+#### bga flag aug 14/15 > 0.1 suspect ----
 
 inspect = as_date('2023-08-14')
 buoyb_exo_vert %>% 
@@ -529,7 +631,7 @@ buoy2023_wq_L1 <- buoy2023_wq_L1 %>%
 
 
 
-# oct 2 cleaning 
+#### oct 2 cleaning ----
 inspect = as_date("2023-10-02")
 
 buoyb_exo_vert %>% 
@@ -548,7 +650,7 @@ buoy2023_wq_L1 <- buoy2023_wq_L1 %>%
             ~ case_when(datetime == as.POSIXct(recode_dt, tz = buoy_tz) ~ NA_real_,
                         TRUE ~ .))
 
-# bga flag oct 19 > 0.2 suspect
+#### bga flag oct 19 > 0.2 suspect ----
 
 inspect = as_date('2023-10-19')
 
@@ -568,6 +670,7 @@ buoy2023_wq_L1 <- buoy2023_wq_L1 %>%
                                's',
                                flag_exobga))
 
+#### add general flags ----
 
 #add clean and calibrate for do (calibration only pertinent to do)
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
@@ -578,32 +681,39 @@ buoy2023_wq_L1 <- buoy2023_wq_L1 %>%
 #add calibration at beginning of season
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
   mutate(flag_exodo = if_else(datetime == redeploy, 'c', flag_exodo))
-                                
+
 
 # flag algae for bdl;
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
   mutate(flag_exobga = if_else(BGAPC_RFU < 0, 'z', flag_exobga),
          flag_exobga = case_when(flag_exobga == '' & datetime == redeploy+minutes(10) ~ 'c',
-                                    flag_exobga != '' & datetime == redeploy+minutes(10)  ~ paste0('c; ', flag_exobga),
-                                    flag_exobga == '' & flag_allexo == 'w' ~ 'w',
-                                    flag_exobga != '' & flag_allexo == 'w' ~ paste0('w; ', flag_exobga),
-                                    TRUE ~ flag_exobga))
+                                 flag_exobga != '' & datetime == redeploy+minutes(10)  ~ paste0('c; ', flag_exobga),
+                                 flag_exobga == '' & flag_allexo == 'w' ~ 'w',
+                                 flag_exobga != '' & flag_allexo == 'w' ~ paste0('w; ', flag_exobga),
+                                 TRUE ~ flag_exobga))
 
 # drop bgapc ugl and chlor ugl
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
   select(-BGAPC_UGL, -Chlor_UGL)
 
 buoyb_exo_vert <- buoy2023_wq_L1 %>% 
-  select(datetime, flag_allexo, all_of(exo)) %>% 
+  select(datetime, flag_allexo, any_of(exo)) %>% 
   pivot_longer(names_to = 'variable',
                values_to = 'values', 
-               -c(datetime,flag_allexo))
+               -c(datetime,flag_allexo)) %>% 
+  filter(!is.na(values))
 
 ggplot(buoyb_exo_vert, aes(x = datetime, y = values)) +
   geom_point() +
   facet_grid(variable ~ ., scales = 'free_y') +
   final_theme
 
+ggplot(buoy2023_wq_L1, aes(x = datetime, y = Chlor_RFU, color = flag_exochl)) +
+  geom_point() +
+  final_theme
+ggplot(buoy2023_wq_L1, aes(x = datetime, y = BGAPC_RFU, color = flag_exobga)) +
+  geom_point() +
+  final_theme
 
 ### BGA ----
 
@@ -618,8 +728,8 @@ bga_sd
 #flag 3*SD
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
   mutate(flag_exobga = case_when(flag_exobga == '' & BGA_stdev > 3*bga_sd ~ 's',
-                                    flag_exobga != '' & !grepl("s", flag_exobga) & BGA_stdev > 3*bga_sd ~ paste0('s; ', flag_exobga),
-                                    TRUE ~ flag_exobga))
+                                 flag_exobga != '' & !grepl("s", flag_exobga) & BGA_stdev > 3*bga_sd ~ paste0('s; ', flag_exobga),
+                                 TRUE ~ flag_exobga))
 
 ggplot(buoy2023_wq_L1, aes(x = datetime, y = BGAPC_RFU, color = BGA_stdev, shape = flag_exobga)) +
   geom_point()
@@ -636,37 +746,13 @@ chla_sd
 
 #flag 3*SD
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
-  mutate(flag_exochl = case_when(chla_stdev > 3*chla_sd ~ 's',
-                                 TRUE ~ ''))
+  mutate(flag_exochl = case_when(flag_exochl == '' & chla_stdev > 3*chla_sd ~ 's',
+                                 flag_exochl != '' & !grepl("s", flag_exochl) & chla_stdev > 3*chla_sd ~ paste0('s; ', flag_exochl),
+                                 TRUE ~ flag_exochl))
 
 
 ggplot(buoy2023_wq_L1, aes(x = datetime, y = Chlor_RFU, color = chla_stdev, shape = flag_exochl)) +
   geom_point()
-
-
-# plot monthly
-for(i in 1:length(months)) {
-  chunk <- buoy2023_wq_L1 %>% 
-    filter(datetime >= as.POSIXct(months[i], tz= buoy_tz) &
-             datetime < (as.POSIXct(months[i], tz=buoy_tz) + weeks(2)))
-  ggplot(chunk, aes(x = datetime, y = BGAPC_RFU, color = flag_exobga)) +
-    geom_point() +
-    scale_x_datetime(date_minor_breaks = '1 day') +
-    final_theme +
-    labs(x = NULL,
-         y = NULL,
-         title = paste0('LSPA exo BGA ', format(months[i], '%B')))
-  ggsave(filename = paste0('graphs/2022/L0p5_exobga_2wks_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
-  ggplot(chunk, aes(x = datetime, y = Chlor_RFU, color = flag_exochl)) +
-    geom_point() +
-    scale_x_datetime(date_minor_breaks = '1 day') +
-    final_theme +
-    labs(x = NULL,
-         y = NULL,
-         title = paste0('LSPA exo chlorophyll ', format(months[i], '%B')))
-  ggsave(filename = paste0('graphs/2022/L0p5_exochla_2wks_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
-}
-
 
 #remove SD cols
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
@@ -675,10 +761,10 @@ buoy2023_wq_L1 <- buoy2023_wq_L1 %>%
 # flag cleaning
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
   mutate(flag_exochl = case_when(flag_exochl == '' & datetime == redeploy+minutes(10)  ~ 'c',
-                           flag_exochl != '' & datetime == redeploy+minutes(10)  ~ paste0('c; ', flag_exochl),
-                           flag_exochl == '' & flag_allexo == 'w' ~ 'w',
-                           flag_exochl != '' & flag_allexo == 'w' ~ paste0('w; ', flag_exochl),
-                           TRUE ~ flag_exochl))
+                                 flag_exochl != '' & datetime == redeploy+minutes(10)  ~ paste0('c; ', flag_exochl),
+                                 flag_exochl == '' & flag_allexo == 'w' ~ 'w',
+                                 flag_exochl != '' & flag_allexo == 'w' ~ paste0('w; ', flag_exochl),
+                                 TRUE ~ flag_exochl))
 
 unique(buoy2023_wq_L1$flag_exochl)
 
@@ -689,82 +775,75 @@ buoyb_fdom_vert <- buoy2023_wq_L1 %>%
   select(datetime, all_of(exofdom)) %>% 
   pivot_longer(names_to = 'variable',
                values_to = 'value', 
-               -datetime)
+               -datetime) %>% 
+  filter(!is.na(value))
 
 ggplot(buoyb_fdom_vert, aes(x = datetime, y = value)) +
   geom_point() +
   facet_grid(variable ~ ., scales = 'free_y')
 
-# plot monthly
-for(i in 1:length(months)) {
-  chunk <- buoy2023_wq_L1 %>% 
-    filter(datetime >= as.POSIXct(months[i], tz= buoy_tz) &
-             datetime < (as.POSIXct(months[i], tz=buoy_tz) + dmonths(1)))
-  ggplot(chunk, aes(x = datetime, y = fDOM_RFU)) +
-    geom_point() +
-    scale_x_datetime(date_minor_breaks = '1 day') +
-    final_theme +
-    labs(x = NULL,
-         y = NULL,
-         title = paste0('LSPA exo fDOM ', format(months[i], '%B')))
-  ggsave(filename = paste0('graphs/2022/L0p5_exofdom_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
-}
-
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
-  mutate(flag_exofdom = case_when(datetime == redeploy_exact +minutes(10) ~ 'c',
-                                  flag_allexo == 'w' ~ 'w',
-                                    TRUE ~ ''))
-
-# add calibration flag for TDS and cond
-buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
-  mutate(flag_exotds = case_when(datetime == redeploy_exact+minutes(10)  ~ 'c',
-                                 flag_allexo == 'w' ~ 'w',
-                                 TRUE ~ ''),
-         flag_exocond = case_when(datetime == redeploy_exact+minutes(10)  ~ 'c',
+  mutate(flag_exofdom = case_when(datetime == redeploy + minutes(10) ~ 'c',
                                   flag_allexo == 'w' ~ 'w',
                                   TRUE ~ ''))
 
+# add calibration flag for TDS and cond
+buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
+  mutate(flag_exotds = case_when(datetime == redeploy+minutes(10)  ~ 'c',
+                                 flag_allexo == 'w' ~ 'w',
+                                 TRUE ~ ''),
+         flag_exocond = case_when(datetime == redeploy+minutes(10)  ~ 'c',
+                                  flag_allexo == 'w' ~ 'w',
+                                  TRUE ~ ''))
 
-### plot all data together monthly ----
+ggplot(buoy2023_wq_L1, aes(x = datetime, y = TDS_mgl, color = flag_exotds)) +
+  geom_point() +
+  final_theme
+
+ggplot(buoy2023_wq_L1, aes(x = datetime, y = Cond, color = flag_exocond)) +
+  geom_point() +
+  final_theme
+
+
+### plot all data together bi-monthly ----
 buoyb_exo_vert <- buoy2023_wq_L1 %>% 
-  select(datetime, flag_allexo, all_of(exo)) %>% 
+  select(datetime, flag_allexo, any_of(exo)) %>% 
   pivot_longer(names_to = 'variable',
                values_to = 'values', 
-               -c(datetime,flag_allexo))
+               -c(datetime,flag_allexo)) %>% 
+  filter(!is.na(values))
 
-# plot monthly
-for(i in 1:length(months)) {
-  chunk <- buoy2023_wq_L1 %>% 
-    filter(datetime >= as.POSIXct(months[i], tz= buoy_tz) &
-             datetime < (as.POSIXct(months[i], tz=buoy_tz) + dmonths(1)))
-  chunk_vert <- chunk %>% 
-    select(datetime, all_of(exo)) %>%
-    pivot_longer(names_to = 'variable', 
-                 values_to = 'value', 
-                 -datetime)
-  ggplot(chunk_vert, aes(x = datetime, y = value)) +
-    geom_point() +
-    facet_grid(variable ~ ., scales = 'free_y') +
-    scale_x_datetime(date_minor_breaks = '1 day') +
-    final_theme +
-    labs(x = NULL,
-         y = NULL,
-         title = paste0('LSPA exo variables ', format(months[i], '%B')))
-  ggsave(filename = paste0('graphs/2022/L1_exo_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+# plot bi-monthly
+for(i in 1:length(two_weeks)) {
+  chunk <- buoyb_exo_vert %>% 
+    filter(datetime >= as.POSIXct(two_weeks[i], tz= buoy_tz) &
+             datetime < (as.POSIXct(two_weeks[i], tz=buoy_tz) + weeks(2)))
+  if (nrow(chunk) > 0) {
+    ggplot(chunk, aes(x = datetime, y = values)) +
+      geom_point() +
+      facet_grid(variable ~ ., scales = 'free_y') +
+      scale_x_datetime(date_minor_breaks = '1 day') +
+      final_theme +
+      labs(x = NULL,
+           y = NULL,
+           title = paste0('LSPA exo variables ', format(two_weeks[i], '%B')))
+    ggsave(filename = paste0('graphs/2023/L1_exo_2wks_', two_weeks[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+  }
 }
 
 #clean up workspace
 rm(buoyb_exo_vert, buoyb_fdom_vert, chunk, chunk_vert)
 
 ## DO ----
+
 #low do is actually at 1m until move to loon
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
-  mutate(DOTempC_harbor = if_else(datetime < redeploy_exact, DOLowTempC, NA_real_),
-         DOLowTempC = if_else(datetime > redeploy_exact, DOLowTempC, NA_real_),
-         DOSat_harbor = if_else(datetime < redeploy_exact, DOLowSat, NA_real_),
-         DOLowSat = if_else(datetime > redeploy_exact, DOLowSat, NA_real_),
-         DOppm_harbor = if_else(datetime < redeploy_exact, DOLowPPM, NA_real_),
-         DOLowPPM = if_else(datetime > redeploy_exact, DOLowPPM, NA_real_))
+  mutate(DOTempC_harbor = if_else(datetime < redeploy, DOLowTempC, NA_real_),
+         DOLowTempC = if_else(datetime > redeploy, DOLowTempC, NA_real_),
+         DOSat_harbor = if_else(datetime < redeploy, DOLowSat, NA_real_),
+         DOLowSat = if_else(datetime > redeploy, DOLowSat, NA_real_),
+         DOppm_harbor = if_else(datetime < redeploy, DOLowPPM, NA_real_),
+         DOLowPPM = if_else(datetime > redeploy, DOLowPPM, NA_real_))
 
 buoy_do_vert <- buoy2023_wq_L1 %>% 
   select(datetime, flag_do10m, all_of(lowDO)) %>% 
@@ -775,27 +854,6 @@ buoy_do_vert <- buoy2023_wq_L1 %>%
 # recode where flagged
 unique(buoy2023_wq_L1$flag_do10m) # all flags are out of water
 
-#move low do to up do where flag == v
-buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
-  mutate(DOTempC_harbor = if_else(flag_do10m == 'v' & datetime > as.Date('2022-10-15'), 
-                                  DOLowTempC,
-                                  DOTempC_harbor),
-         DOLowTempC = if_else(is.na(DOTempC_harbor), 
-                             DOLowTempC,
-                             NA_real_),
-         DOSat_harbor = if_else(flag_do10m == 'v' & datetime > as.Date('2022-10-15'),
-                                DOLowSat,
-                                DOSat_harbor),
-         DOLowSat = if_else(is.na(DOSat_harbor),
-                           DOLowSat,
-                           NA_real_),
-         DOppm_harbor = if_else(flag_do10m == 'v' & datetime > as.Date('2022-10-17'),
-                                DOLowPPM,
-                                DOppm_harbor),
-         DOLowPPM = if_else(is.na(DOppm_harbor),
-                            DOLowPPM,
-                            NA_real_))
-
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
   mutate_at(vars(all_of(lowDO)),
             ~ case_when(flag_do10m != '' ~ NA_real_,
@@ -803,34 +861,200 @@ buoy2023_wq_L1 <- buoy2023_wq_L1 %>%
 
 #add flag for calibration prior to deploy in April
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
-  mutate(flag_do10m = case_when(datetime == redeploy_exact +minutes(10) ~ 'c',
-                                  TRUE ~ flag_do10m))
+  mutate(flag_do10m = case_when(datetime == redeploy +minutes(10) ~ 'c',
+                                TRUE ~ flag_do10m))
 
 buoy_do_vert <- buoy2023_wq_L1 %>% 
   select(datetime, flag_do10m, all_of(lowDO)) %>% 
   pivot_longer(names_to = 'variable', 
                values_to =  'value', 
-               -c(datetime,flag_do10m))
+               -c(datetime,flag_do10m)) %>% 
+  filter(!is.na(value))
 
 ggplot(buoy_do_vert, aes(x = datetime, y = value, color = flag_do10m))+
   geom_point()+
   facet_grid(variable ~., scales = 'free_y')
 
-# plot monthly
-for(i in 1:length(months)) {
+# plot bi-monthly
+for(i in 1:length(two_weeks)) {
   chunk <- buoy_do_vert %>% 
-    filter(datetime >= as.POSIXct(months[i], tz= buoy_tz) &
-             datetime < (as.POSIXct(months[i], tz=buoy_tz) + dmonths(1)))
-  ggplot(chunk, aes(x = datetime, y = value)) +
-    geom_point() +
-    facet_grid(variable ~ ., scales = 'free_y') +
-    scale_x_datetime(date_minor_breaks = '1 day') +
-    final_theme +
-    labs(x = NULL,
-         y = NULL,
-         title = paste0('LSPA low DO ', format(months[i], '%B')))
-  ggsave(filename = paste0('graphs/2022/L1_LowDO_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+    filter(datetime >= as.POSIXct(two_weeks[i], tz= buoy_tz) &
+             datetime < (as.POSIXct(two_weeks[i], tz=buoy_tz) + weeks(2)))
+  if (nrow(chunk) > 0) {
+    ggplot(chunk, aes(x = datetime, y = value)) +
+      geom_point() +
+      facet_grid(variable ~ ., scales = 'free_y') +
+      scale_x_datetime(date_minor_breaks = '1 day') +
+      final_theme +
+      labs(x = NULL,
+           y = NULL,
+           title = paste0('LSPA low DO ', format(two_weeks[i], '%B')))
+    ggsave(filename = paste0('graphs/2023/L0_LowDO_2wks_', two_weeks[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+  }
 }
+
+#### Jun 30 failure - recode all after first 0 value through eod jul 10 ----
+inspect = as_date('2023-06-30')
+
+buoyb_lodo_vert <- buoy2023_wq_L1 %>% 
+  select(datetime, all_of(lowDO)) %>% 
+  pivot_longer(names_to = 'variable',
+               values_to = 'values', 
+               -c(datetime)) %>% 
+  filter(!is.na(values))
+
+buoyb_lodo_vert %>% 
+  filter(datetime >= inspect - days(2) &
+           datetime < (inspect + days(2))) %>% 
+  ggplot(., aes(x = datetime, y = values)) +
+  geom_point() +
+  scale_x_datetime(minor_breaks = "1 hour") +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  final_theme
+
+recode_dt = '2023-06-30 01:00'
+
+buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
+  mutate_at(vars(all_of(lowDO)), 
+            ~ if_else(datetime >= ymd_hm(recode_dt, tz = buoy_tz) &
+                        datetime <= as_date('2023-07-11'),
+                      NA_real_,
+                      .))
+
+buoyb_lodo_vert <- buoy2023_wq_L1 %>% 
+  select(datetime, all_of(lowDO)) %>% 
+  pivot_longer(names_to = 'variable',
+               values_to = 'values', 
+               -c(datetime)) %>% 
+  filter(!is.na(values))
+
+buoyb_lodo_vert %>% 
+  filter(datetime >= inspect - days(2) &
+           datetime < (inspect + days(2))) %>% 
+  ggplot(., aes(x = datetime, y = values)) +
+  geom_point() +
+  scale_x_datetime(minor_breaks = "1 hour") +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  final_theme
+
+# and recode the outlier prior to failure
+recode_dt = ymd_hm('2023-06-29 16:10', tz = buoy_tz)
+
+buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
+  mutate_at(vars(DOLowPPM, DOLowSat), 
+            ~ if_else(datetime == recode_dt,
+                      NA_real_,
+                      .))
+
+buoyb_lodo_vert <- buoy2023_wq_L1 %>% 
+  select(datetime, all_of(lowDO)) %>% 
+  pivot_longer(names_to = 'variable',
+               values_to = 'values', 
+               -c(datetime)) %>% 
+  filter(!is.na(values))
+
+buoyb_lodo_vert %>% 
+  filter(datetime >= inspect - days(2) &
+           datetime < (inspect + days(2))) %>% 
+  ggplot(., aes(x = datetime, y = values)) +
+  geom_point() +
+  scale_x_datetime(minor_breaks = "1 hour") +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  final_theme
+
+#### redeploy aug 10 ----
+inspect = as_date('2023-08-10')
+
+buoyb_lodo_vert %>% 
+  filter(datetime >= inspect &
+           datetime < (inspect + days(1))) %>% 
+  ggplot(., aes(x = datetime, y = values)) +
+  geom_point() +
+  scale_x_datetime(minor_breaks = "1 hour") +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  final_theme
+
+recode_dt = ymd_hm("2023-08-10 08:40", tz = buoy_tz)
+
+buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
+  mutate_at(vars(all_of(lowDO)), 
+            ~ if_else(datetime >= inspect &
+                        datetime < recode_dt,
+                      NA_real_,
+                      .))
+
+buoyb_lodo_vert <- buoy2023_wq_L1 %>% 
+  select(datetime, all_of(lowDO)) %>% 
+  pivot_longer(names_to = 'variable',
+               values_to = 'values', 
+               -c(datetime)) %>% 
+  filter(!is.na(values))
+
+buoyb_lodo_vert %>% 
+  filter(datetime >= inspect &
+           datetime < (inspect + days(1))) %>% 
+  ggplot(., aes(x = datetime, y = values)) +
+  geom_point() +
+  scale_x_datetime(minor_breaks = "1 hour") +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  final_theme
+
+#### oct 14 failure - recode all after first 0 value through end of record ----
+inspect = as_date('2023-10-14')
+
+buoyb_lodo_vert %>% 
+  filter(datetime >= inspect &
+           datetime < (inspect + days(1))) %>% 
+  ggplot(., aes(x = datetime, y = values)) +
+  geom_point() +
+  scale_x_datetime(minor_breaks = "1 hour") +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  final_theme
+
+recode_dt = ymd_hm("2023-10-14 16:00", tz = buoy_tz)
+
+buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
+  mutate_at(vars(all_of(lowDO)), 
+            ~ if_else(datetime >= recode_dt &
+                        datetime <= as_date('2023-12-31'),
+                      NA_real_,
+                      .))
+
+buoyb_lodo_vert <- buoy2023_wq_L1 %>% 
+  select(datetime, all_of(lowDO)) %>% 
+  pivot_longer(names_to = 'variable',
+               values_to = 'values', 
+               -c(datetime)) %>% 
+  filter(!is.na(values))
+
+buoyb_lodo_vert %>% 
+  filter(datetime >= inspect &
+           datetime < (inspect + days(1))) %>% 
+  ggplot(., aes(x = datetime, y = values)) +
+  geom_point() +
+  scale_x_datetime(minor_breaks = "1 hour") +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  final_theme
+
+
+# plot bi-monthly
+for(i in 1:length(two_weeks)) {
+  chunk <- buoyb_lodo_vert %>% 
+    filter(datetime >= as.POSIXct(two_weeks[i], tz= buoy_tz) &
+             datetime < (as.POSIXct(two_weeks[i], tz=buoy_tz) + weeks(2)))
+  if (nrow(chunk) > 0) {
+    ggplot(chunk, aes(x = datetime, y = values)) +
+      geom_point() +
+      facet_grid(variable ~ ., scales = 'free_y') +
+      scale_x_datetime(date_minor_breaks = '1 day') +
+      final_theme +
+      labs(x = NULL,
+           y = NULL,
+           title = paste0('LSPA low DO ', format(two_weeks[i], '%B')))
+    ggsave(filename = paste0('graphs/2023/L1_LowDO_2wks_', two_weeks[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+  }
+}
+
 
 #clean up workspace
 rm(buoy_do_vert, chunk)
@@ -838,62 +1062,40 @@ rm(buoy_do_vert, chunk)
 ## Upper DO in harbor ----
 harbordo_vert <- buoy2023_wq_L1 %>% 
   select(datetime, DOSat_harbor, DOppm_harbor, DOTempC_harbor) %>% 
-  pivot_longer(names_to = 'variable', values_to = 'value', -datetime)
+  pivot_longer(names_to = 'variable', values_to = 'value', -datetime) %>% 
+  filter(!is.na(value))
 
 ggplot(harbordo_vert, aes(x = datetime, y = value)) +
   geom_point() +
   facet_grid(variable ~ ., scales = 'free_y') +
   scale_x_datetime(minor_breaks = '1 month')
 
-# need to correct for beginning of record -- actually begins on the 25th
+# need to remove data during deployment
 harbordo_vert %>% 
-  filter(datetime > as.Date(redeploy_exact)-days(5) & 
-           datetime < as.Date(redeploy_exact) + days(5)) %>% 
+  filter(datetime > as.Date(redeploy) & 
+           datetime <= as.Date(redeploy) + days(1)) %>% 
   ggplot(., aes(x = datetime, y = value)) +
   geom_point() +
   facet_grid(variable ~ ., scales = 'free_y') +
   scale_x_datetime(minor_breaks = '1 hour')
 
-harbordo_vert %>% 
-  filter(datetime > as.Date(redeploy_exact)-days(1) & 
-           datetime < as.Date(redeploy_exact)) %>% 
-  ggplot(., aes(x = datetime, y = value)) +
-  geom_point() +
-  facet_grid(variable ~ ., scales = 'free_y') +
-  scale_x_datetime(minor_breaks = '1 hour')
 
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
   mutate_at(vars(DOSat_harbor, DOppm_harbor, DOTempC_harbor),
-            ~case_when(datetime >= as.POSIXct('2022-04-25 10:00', tz =buoy_tz) &
-                         datetime < redeploy_exact ~ NA_real_,
+            ~case_when(datetime >= as.POSIXct('2023-05-15 8:00', tz = buoy_tz) &
+                         datetime < redeploy ~ NA_real_,
                        TRUE ~ .))
-#and move to harbor
-harbordo_vert %>% 
-  filter(datetime > as.POSIXct('2022-10-17', tz = buoy_tz) & 
-           datetime < as.POSIXct('2022-10-18', tz = buoy_tz)) %>% 
-  ggplot(., aes(x = datetime, y = value)) +
-  geom_point() +
-  facet_grid(variable ~ ., scales = 'free_y') +
-  scale_x_datetime(minor_breaks = '1 hour')
 
+# add 'in transit' during the time from recode to redeploy
 buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
-  mutate_at(vars(DOSat_harbor, DOppm_harbor, DOTempC_harbor),
-            ~case_when(datetime > as.POSIXct('2022-10-17 00:00', tz =buoy_tz) &
-                         datetime < as.POSIXct('2022-10-17 14:00')~ NA_real_,
-                       TRUE ~ .))
-harbordo_vert <- buoy2023_wq_L1 %>% 
-  select(datetime, DOSat_harbor, DOppm_harbor, DOTempC_harbor) %>% 
-  pivot_longer(names_to = 'variable', values_to = 'value', -datetime)
+  mutate(location = case_when(datetime >= as.POSIXct('2023-05-15 8:00', tz = buoy_tz) &
+                              datetime < redeploy ~ "in transit",
+                              datetime <  as.POSIXct('2023-05-15 8:00', tz = buoy_tz) ~ "harbor",
+                            .default = location))
 
 # plot to check
 harbordo_vert %>% 
-  filter(datetime > as.POSIXct('2022-04-25', tz = buoy_tz) & datetime < as.POSIXct('2022-04-27', tz = buoy_tz)) %>% 
-  ggplot(., aes(x = datetime, y = value)) +
-  geom_point() +
-  facet_grid(variable ~ ., scales = 'free_y') +
-  scale_x_datetime(minor_breaks = '1 hour')
-harbordo_vert %>% 
-  filter(datetime > as.POSIXct('2022-10-17', tz = buoy_tz) & datetime < as.POSIXct('2022-10-18', tz = buoy_tz)) %>% 
+  filter(datetime > redeploy - days(5) & datetime < redeploy + days(5)) %>% 
   ggplot(., aes(x = datetime, y = value)) +
   geom_point() +
   facet_grid(variable ~ ., scales = 'free_y') +
@@ -904,28 +1106,23 @@ ggplot(harbordo_vert, aes(x = datetime, y = value)) +
   facet_grid(variable ~ ., scales = 'free_y') +
   scale_x_datetime(minor_breaks = '1 month')
 
-#add location information
-buoy2023_wq_L1 <- buoy2023_wq_L1 %>% 
-  mutate(location = case_when(datetime >= exo_eor & datetime < as.POSIXct('2022-10-17 14:00', tz =buoy_tz) ~ 'in transit',
-                              datetime >= as.POSIXct('2022-10-17 14:00', tz =buoy_tz) ~ 'harbor', 
-                              TRUE ~ location))
 
 #double check location
 ggplot(buoy2023_wq_L1, aes(x = datetime, y = location)) +
   geom_point()
 
 
-# 2022 Met data ----
+# 2022 MET DATA ----
 
 # get location from wq data and apply to met
 first_loon = first(buoy2023_wq_L1$datetime[buoy2023_wq_L1$location == 'loon'])
 first_intransit = first(buoy2023_wq_L1$datetime[buoy2023_wq_L1$location == 'in transit'])
-first_harbor = first(buoy2023_wq_L1$datetime[buoy2023_wq_L1$location == 'harbor'])
+first_offline = first(buoy2023_wq_L1$datetime[buoy2023_wq_L1$location == 'offline'])
 
 buoy2023_met_L1 <- buoy2023_met_L1 %>% 
-  mutate(location = case_when(datetime >= first_loon & datetime < first_intransit ~ 'loon',
-                              datetime >= first_intransit & datetime < first_harbor ~ 'in transit',
-                              datetime >= first_harbor ~ 'harbor',
+  mutate(location = case_when(datetime < first_intransit ~ 'harbor',
+                              datetime >= first_intransit & datetime < first_loon ~ 'in transit',
+                              datetime >= first_loon & datetime < first_offline ~ 'loon',
                               TRUE ~ ''))
 
 # recode when in transit
@@ -934,46 +1131,43 @@ buoy2023_met_L1 <- buoy2023_met_L1 %>%
             ~ case_when(location == 'in transit' ~ NA_real_,
                         TRUE ~ .))
 
-#look at flags
+# look at flags
 unique(buoy2023_met_L1$flag_allmet)
 
-# flag is 'v' for moved, which has already been recoded above.
-# flag 'h' is for new PAR head, which should be recoded, though there is probably no data during this time
-buoy2023_met_L1 <- buoy2023_met_L1 %>% 
-  mutate_at(vars(PAR_ave_umolpspm2, PAR_tot_mmolpm2),
-            ~ case_when(flag_allmet == 'h' ~ NA_real_,
-                        TRUE ~ .))
+# no flags
 
-
-
-#plotting all of the met data at same time takes too long - only plot by data group
+# plotting all of the met data at same time takes too long - only plot by data group
 
 ## air temp and rel hum ----
 buoy_temp_vert <- buoy2023_met_L1 %>% 
   select(datetime, all_of(air), location) %>% 
   pivot_longer(names_to = 'variable', 
                values_to =  'value', 
-               -c(datetime, location))
+               -c(datetime, location)) %>% 
+  filter(!is.na(value))
 
-# plot monthly
-for(i in 1:length(months)) {
+# plot bi-monthly
+for(i in 1:length(two_weeks)) {
   chunk <- buoy_temp_vert %>% 
-    filter(datetime >= as.POSIXct(months[i], tz= buoy_tz) &
-             datetime < (as.POSIXct(months[i], tz=buoy_tz) + dmonths(1)))
+    filter(datetime >= as.POSIXct(two_weeks[i], tz= buoy_tz) &
+             datetime < (as.POSIXct(two_weeks[i], tz=buoy_tz) + weeks(2)))
   if(nrow(chunk>0)){
     ggplot(chunk, aes(x = datetime, y = value, color = location)) +
-    geom_point() +
-    facet_grid(variable ~ ., scales = 'free_y') +
-    scale_x_datetime(date_minor_breaks = '1 day') +
-    final_theme +
-    labs(x = NULL,
-         y = NULL,
-         title = paste0('LSPA buoy Air Temp RH ', format(months[i], '%B')))
-  ggsave(filename = paste0('graphs/2022/L0_airRH_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+      geom_point() +
+      facet_grid(variable ~ ., scales = 'free_y') +
+      scale_x_datetime(date_minor_breaks = '1 day') +
+      final_theme +
+      labs(x = NULL,
+           y = NULL,
+           title = paste0('LSPA buoy Air Temp RH ', format(two_weeks[i], '%B')))
+    ggsave(filename = paste0('graphs/2023/L0_airRH_2wks_', two_weeks[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
   }
 }
 
-#data look good!
+# just need to recode from beginning of offline time to eoy
+buoy2023_met_L1 <- buoy2023_met_L1 %>% 
+  mutate_at(vars(all_of(met)),
+            ~ if_else(datetime >= first_offline, NA_real_, .))
 
 
 ## wind ----
@@ -984,10 +1178,10 @@ buoy_wind_vert <- buoy2023_met_L1 %>%
                -c(datetime, location))
 
 # plot monthly
-for(i in 1:length(months)) {
+for(i in 1:length(two_weeks)) {
   chunk <- buoy_wind_vert %>% 
-    filter(datetime >= as.POSIXct(months[i], tz= buoy_tz) &
-             datetime < (as.POSIXct(months[i], tz=buoy_tz) + dmonths(1)))
+    filter(datetime >= as.POSIXct(two_weeks[i], tz= buoy_tz) &
+             datetime < (as.POSIXct(two_weeks[i], tz=buoy_tz) + weeks(2)))
   if(nrow(chunk>0)){
     ggplot(chunk, aes(x = datetime, y = value, color = location)) +
       geom_point() +
@@ -996,62 +1190,28 @@ for(i in 1:length(months)) {
       final_theme +
       labs(x = NULL,
            y = NULL,
-           title = paste0('LSPA buoy wind ', format(months[i], '%B')))
-    ggsave(filename = paste0('graphs/2022/L0_wind_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+           title = paste0('LSPA buoy wind ', format(two_weeks[i], '%B')))
+    ggsave(filename = paste0('graphs/2023/L0_wind_monthly_', two_weeks[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
   }
 }
 
-#need to look more closely at nov and dec 
-biweekly = seq.Date(as.Date('2022-11-01'), as.Date('2023-01-01'), by = '2 weeks')
-# plot monthly
-for(i in 1:length(biweekly)) {
-  chunk <- buoy_wind_vert %>% 
-    filter(datetime >= as.POSIXct(biweekly[i], tz= buoy_tz) &
-             datetime < (as.POSIXct(biweekly[i], tz=buoy_tz) + weeks(2)))
-  if(nrow(chunk>0)){
-    ggplot(chunk, aes(x = datetime, y = value, color = location)) +
-      geom_point() +
-      facet_grid(variable ~ ., scales = 'free_y') +
-      scale_x_datetime(date_minor_breaks = '1 day') +
-      final_theme +
-      labs(x = NULL,
-           y = NULL,
-           title = paste0('LSPA buoy wind ', biweekly[i]))
-    ggsave(filename = paste0('graphs/2022/L0_wind_endofseason_biweekly_', biweekly[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
-  }
-}
 
-#sensor frozen jan 7-9
+#### Jan 3 ----
+inspect = ymd('2023-01-03', tz = buoy_tz)
+
+buoy_wind_vert %>% 
+  filter(datetime >= inspect - hours(12) &
+           datetime <= inspect + days(1) + hours(12)) %>% 
+  ggplot(., aes(x = datetime, y = value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 day') +
+  final_theme
+
 buoy2023_met_L1 <- buoy2023_met_L1 %>% 
   mutate_at(all_of(wind),
-            ~case_when(datetime >= as.POSIXct('2022-01-07', tz = buoy_tz) &
-                         datetime < as.POSIXct('2022-01-10', tz = buoy_tz) &
-                         MaxWindSp == 0 ~ NA_real_, 
-                       TRUE ~ .))
-
-
-#sensor frozen feb 4-5
-buoy2023_met_L1 <- buoy2023_met_L1 %>% 
-  mutate_at(all_of(wind),
-            ~case_when(datetime >= as.POSIXct('2022-02-04', tz = buoy_tz) &
-                         datetime < as.POSIXct('2022-02-06', tz = buoy_tz) &
-                         MaxWindSp == 0 ~ NA_real_, 
-                       TRUE ~ .))
-
-
-#sensor frozen mar 9-10
-buoy2023_met_L1 <- buoy2023_met_L1 %>% 
-  mutate_at(all_of(wind),
-            ~case_when(datetime >= as.POSIXct('2022-03-09', tz = buoy_tz) &
-                         datetime < as.POSIXct('2022-03-11', tz = buoy_tz) &
-                         AveWindDir == 0 ~ NA_real_, 
-                       TRUE ~ .))
-
-#sensor frozen dec 17
-buoy2023_met_L1 <- buoy2023_met_L1 %>% 
-  mutate_at(all_of(wind),
-            ~case_when(datetime >= as.POSIXct('2022-12-17', tz = buoy_tz) &
-                         datetime < as.POSIXct('2022-12-18', tz = buoy_tz) &
+            ~case_when(datetime >= inspect &
+                         datetime < inspect + days(1) &
                          MaxWindSp == 0 ~ NA_real_, 
                        TRUE ~ .))
 
@@ -1061,11 +1221,188 @@ buoy_wind_vert <- buoy2023_met_L1 %>%
                values_to =  'value', 
                -c(datetime, location))
 
-# plot monthly
-for(i in 1:length(months)) {
+buoy_wind_vert %>% 
+  filter(datetime >= inspect - hours(12) &
+           datetime <= inspect + days(1) + hours(12)) %>% 
+  ggplot(., aes(x = datetime, y = value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 day') +
+  final_theme
+
+
+#### Jan 6 ----
+inspect = ymd('2023-01-06', tz = buoy_tz)
+
+buoy_wind_vert %>% 
+  filter(datetime >= inspect - hours(12) &
+           datetime <= inspect + days(1) + hours(12)) %>% 
+  ggplot(., aes(x = datetime, y = value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 day') +
+  final_theme
+
+buoy2023_met_L1 <- buoy2023_met_L1 %>% 
+  mutate_at(all_of(wind),
+            ~case_when(datetime >= inspect &
+                         datetime < inspect + days(1) &
+                         MaxWindSp == 0 ~ NA_real_, 
+                       TRUE ~ .))
+
+buoy_wind_vert <- buoy2023_met_L1 %>% 
+  select(datetime, all_of(wind), location) %>% 
+  pivot_longer(names_to = 'variable', 
+               values_to =  'value', 
+               -c(datetime, location))
+
+buoy_wind_vert %>% 
+  filter(datetime >= inspect - hours(12) &
+           datetime <= inspect + days(1) + hours(12)) %>% 
+  ggplot(., aes(x = datetime, y = value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 day') +
+  final_theme
+
+#### Jan 23-25 ----
+
+inspect = ymd('2023-01-23', tz = buoy_tz)
+
+buoy_wind_vert %>% 
+  filter(datetime >= inspect - hours(12) &
+           datetime <= inspect + days(3) + hours(12)) %>% 
+  ggplot(., aes(x = datetime, y = value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 day') +
+  final_theme
+
+buoy2023_met_L1 <- buoy2023_met_L1 %>% 
+  mutate_at(all_of(wind),
+            ~case_when(datetime >= inspect - hours(12) &
+                         datetime <= inspect + days(3) + hours(12) &
+                         MaxWindSp == 0 ~ NA_real_, 
+                       TRUE ~ .))
+
+buoy_wind_vert <- buoy2023_met_L1 %>% 
+  select(datetime, all_of(wind), location) %>% 
+  pivot_longer(names_to = 'variable', 
+               values_to =  'value', 
+               -c(datetime, location))
+
+buoy_wind_vert %>% 
+  filter(datetime >= inspect - hours(12) &
+           datetime <= inspect + days(3) + hours(12)) %>% 
+  ggplot(., aes(x = datetime, y = value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 day') +
+  final_theme
+
+#### Mar 13-15 ----
+
+inspect = ymd('2023-03-13', tz = buoy_tz)
+
+buoy_wind_vert %>% 
+  filter(datetime >= inspect - hours(12) &
+           datetime <= inspect + days(3) + hours(12)) %>% 
+  ggplot(., aes(x = datetime, y = value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 day') +
+  final_theme
+
+buoy2023_met_L1 <- buoy2023_met_L1 %>% 
+  mutate_at(all_of(wind),
+            ~case_when(datetime >= inspect - hours(12) &
+                         datetime <= inspect + days(3) + hours(12) &
+                         MaxWindSp == 0 ~ NA_real_, 
+                       TRUE ~ .))
+
+buoy_wind_vert <- buoy2023_met_L1 %>% 
+  select(datetime, all_of(wind), location) %>% 
+  pivot_longer(names_to = 'variable', 
+               values_to =  'value', 
+               -c(datetime, location))
+
+buoy_wind_vert %>% 
+  filter(datetime >= inspect - hours(12) &
+           datetime <= inspect + days(3) + hours(12)) %>% 
+  ggplot(., aes(x = datetime, y = value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 day') +
+  final_theme
+
+# flag data right before recode
+
+buoy2023_met_L1 <- buoy2023_met_L1 %>% 
+  mutate(flag_wind = if_else(datetime >= inspect + days(1) &
+                               datetime <= inspect + days(2) &
+                               MaxWindSp > 20, 's', ''))
+
+
+#### Apr 1 ----
+
+inspect = ymd('2023-04-01', tz = buoy_tz)
+
+buoy_wind_vert %>% 
+  filter(datetime >= inspect - hours(12) &
+           datetime <= inspect + days(1) + hours(12)) %>% 
+  ggplot(., aes(x = datetime, y = value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 day') +
+  final_theme
+
+buoy2023_met_L1 <- buoy2023_met_L1 %>% 
+  mutate_at(all_of(wind),
+            ~case_when(datetime >= inspect &
+                         datetime <= inspect + days(1) &
+                         MaxWindSp == 0 ~ NA_real_, 
+                       TRUE ~ .))
+
+buoy_wind_vert <- buoy2023_met_L1 %>% 
+  select(datetime, all_of(wind), location) %>% 
+  pivot_longer(names_to = 'variable', 
+               values_to =  'value', 
+               -c(datetime, location))
+
+buoy_wind_vert %>% 
+  filter(datetime >= inspect - hours(12) &
+           datetime <= inspect + days(1) + hours(12)) %>% 
+  ggplot(., aes(x = datetime, y = value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 day') +
+  final_theme
+
+#### Flag Apr 27 ----
+
+inspect = ymd("2023-04-27", tz = buoy_tz)
+
+
+buoy_wind_vert %>% 
+  filter(datetime >= inspect - hours(12) &
+           datetime <= inspect + days(1) + hours(12)) %>% 
+  ggplot(., aes(x = datetime, y = value)) +
+  geom_point() +
+  facet_grid(variable ~ ., scales = 'free_y') +
+  scale_x_datetime(date_minor_breaks = '1 day') +
+  final_theme
+
+buoy2023_met_L1 <- buoy2023_met_L1 %>% 
+  mutate(flag_wind = if_else(datetime >= inspect &
+                         datetime <= inspect + days(1) &
+                         MaxWindSp > 10, 's', flag_wind))
+
+
+# plot bi-monthly
+for(i in 1:length(two_weeks)) {
   chunk <- buoy_wind_vert %>% 
-    filter(datetime >= as.POSIXct(months[i], tz= buoy_tz) &
-             datetime < (as.POSIXct(months[i], tz=buoy_tz) + dmonths(1)))
+    filter(datetime >= as.POSIXct(two_weeks[i], tz= buoy_tz) &
+             datetime < (as.POSIXct(two_weeks[i], tz=buoy_tz) + weeks(2)))
   if(nrow(chunk)>0){
     ggplot(chunk, aes(x = datetime, y = value, color = location)) +
       geom_point() +
@@ -1074,8 +1411,8 @@ for(i in 1:length(months)) {
       final_theme +
       labs(x = NULL,
            y = NULL,
-           title = paste0('LSPA buoy wind ', format(months[i], '%B')))
-    ggsave(filename = paste0('graphs/2022/L1_wind_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+           title = paste0('LSPA buoy wind ', format(two_weeks[i], '%B')))
+    ggsave(filename = paste0('graphs/2023/L1_wind_monthly_', two_weeks[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
   }
 }
 
@@ -1084,10 +1421,11 @@ range(buoy2023_met_L1$PAR_ave_umolpspm2, na.rm = T)
 range(buoy2023_met_L1$PAR_tot_mmolpm2, na.rm = T)
 
 buoy_par_vert <- buoy2023_met_L1 %>% 
-  select(datetime, all_of(par2022), location) %>% 
+  select(datetime, all_of(par2021), location) %>% 
   pivot_longer(names_to = 'variable', 
                values_to =  'value', 
-               -c(datetime, location))
+               -c(datetime, location)) %>% 
+  filter(!is.na(value))
 
 ggplot(buoy_par_vert, aes(x = datetime, y = value, color = location)) +
   geom_point() +
@@ -1096,20 +1434,22 @@ ggplot(buoy_par_vert, aes(x = datetime, y = value, color = location)) +
   final_theme 
 
 
-# plot monthly
-for(i in 1:length(months)) {
+# plot bi-monthly
+for(i in 1:length(two_weeks)) {
   chunk <- buoy_par_vert %>% 
-    filter(datetime >= as.POSIXct(months[i], tz= buoy_tz) &
-             datetime < (as.POSIXct(months[i], tz=buoy_tz) + dmonths(1)))
-  ggplot(chunk, aes(x = datetime, y = value, color = location)) +
-    geom_point() +
-    facet_grid(variable ~ ., scales = 'free_y') +
-    scale_x_datetime(date_minor_breaks = '1 day') +
-    final_theme +
-    labs(x = NULL,
-         y = NULL,
-         title = paste0('LSPA buoy PAR ', format(months[i], '%B')))
-  ggsave(filename = paste0('graphs/2022/L0_PAR_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+    filter(datetime >= as.POSIXct(two_weeks[i], tz= buoy_tz) &
+             datetime < (as.POSIXct(two_weeks[i], tz=buoy_tz) + weeks(2)))
+  if (nrow(chunk) > 0) {
+    ggplot(chunk, aes(x = datetime, y = value, color = location)) +
+      geom_point() +
+      facet_grid(variable ~ ., scales = 'free_y') +
+      scale_x_datetime(date_minor_breaks = '1 day') +
+      final_theme +
+      labs(x = NULL,
+           y = NULL,
+           title = paste0('LSPA buoy PAR ', format(two_weeks[i], '%B')))
+    ggsave(filename = paste0('graphs/2023/L0_PAR_monthly_', two_weeks[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+  }
 }
 
 #data look pretty good, but we still have night time par issues
@@ -1126,10 +1466,10 @@ buoy_par_vert <- buoy2023_met_L1 %>%
                -c(datetime, location, flag_par))
 
 # plot monthly
-for(i in 1:length(months)) {
+for(i in 1:length(two_weeks)) {
   chunk <- buoy_par_vert %>% 
-    filter(datetime >= as.POSIXct(months[i], tz= buoy_tz) &
-             datetime < (as.POSIXct(months[i], tz=buoy_tz) + dmonths(1)))
+    filter(datetime >= as.POSIXct(two_weeks[i], tz= buoy_tz) &
+             datetime < (as.POSIXct(two_weeks[i], tz=buoy_tz) + dtwo_weeks(1)))
   ggplot(chunk, aes(x = datetime, y = value, color = flag_par, shape = location)) +
     geom_point() +
     facet_grid(variable ~ ., scales = 'free_y') +
@@ -1137,8 +1477,8 @@ for(i in 1:length(months)) {
     final_theme +
     labs(x = NULL,
          y = NULL,
-         title = paste0('LSPA buoy PAR ', format(months[i], '%B')))
-  ggsave(filename = paste0('graphs/2022/L1_PAR_monthly_', months[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
+         title = paste0('LSPA buoy PAR ', format(two_weeks[i], '%B')))
+  ggsave(filename = paste0('graphs/2022/L1_PAR_monthly_', two_weeks[i], '.jpg'), height = 8, width =10, units = 'in', dpi = 300)
 }
 
 # Convert to CV ----
@@ -1241,7 +1581,7 @@ unique(buoy2023_met_L1$flag_par)
 # apply the 'h' flag from all met to flag_par
 buoy2023_met_L1 <- buoy2023_met_L1 %>% 
   mutate(flag_par = case_when(flag_allmet == 'h' ~ paste(flag_par, 'h', sep = '; '),
-                             TRUE ~ flag_par))
+                              TRUE ~ flag_par))
 
 #export l1 met file
 buoy2023_met_L1 %>%
