@@ -1666,12 +1666,18 @@ unique(buoy2023_met_L1$flag_par)
 unique(buoy2023_met_L1$flag_wind)
 
 #export l1 met file
-buoy2023_met_L1 %>%
+buoy2023_met_L1 <- buoy2023_met_L1 %>%
   select(datetime, 
          airTemperature_degC, relativeHumidity_perc, 
          radiationIncomingPARAverage_mmolm2s, radiationIncomingPARTotal_mmolm2, flag_par,
          winddirectionInstantaneous_deg:windDirectionAverage_deg, flag_wind,
          location,
-         flag_batt_log, flag_batt_radio) %>%
-  mutate(datetime = as.character(datetime)) %>%
-  write_csv(., file.path(dump_dir, 'met/2023_met_L1_v2025.csv'))
+         flag_batt_log, flag_batt_radio) 
+
+buoy2023_met_L1 %>%
+  filter(datetime < as.Date('2023-07-01')) %>% 
+  write_csv(., file.path(dump_dir, 'met/2023a_met_L1_v2025.csv'))
+
+buoy2023_met_L1 %>%
+  filter(datetime >= as.Date('2023-07-01')) %>% 
+  write_csv(., file.path(dump_dir, 'met/2023b_met_L1_v2025.csv'))
