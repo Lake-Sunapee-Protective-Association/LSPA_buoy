@@ -127,6 +127,7 @@ unique(LMP$parameter)
 # format and harmonize
 do210 <- LMP %>% 
   mutate(date = as.Date(date)) %>% 
+  filter(date < ymd("2024-01-01")) %>% 
   filter((parameter == 'waterTemperature_degreeCelsius'|parameter == 'oxygenDissolved_milligramPerLiter' |parameter == 'oxygenDissolvedPercentOfSaturation_percent') & station == 210 & date >= as.Date('2007-01-01')) %>% 
   filter(between(month(date), 4, 11)) %>% 
   arrange(date, depth_m) %>% 
@@ -208,5 +209,5 @@ endyear = format(max(manual_do$date), '%Y')
 manual_do %>% 
   arrange(date, depth_m) %>% 
   select(-c(datetime.local, flag_domgl, flag_dopct), 
-         datetime = datetime.et) %>% 
+         datetime = datetime.et) %>%
   write.csv(., file.path(dump_dir, paste0('manual_do_', startyear, '-', endyear, '_v', Sys.Date(), '.csv')), row.names = F)

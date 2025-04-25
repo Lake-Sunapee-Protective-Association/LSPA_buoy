@@ -1162,7 +1162,7 @@ ggplot(buoy2023_wq_L1, aes(x = datetime, y = location)) +
   geom_point()
 
 
-# 2022 MET DATA ----
+# 2023 MET DATA ----
 
 # get location from wq data and apply to met
 first_loon = first(buoy2023_wq_L1$datetime[buoy2023_wq_L1$location == 'loon'])
@@ -1582,7 +1582,9 @@ buoy2023_wq_L1 <- buoy2023_wq_L1 %>%
            oxygenDissolvedPercentOfSaturation_pct_10m,
            oxygenDissolved_mgl_10m,
            .after = fluorescenceDissolvedOrganicMatter_RFU_1m) %>% 
-  select(-c(rowid_wq, Chlor_UGL, BGAPC_UGL, fDOM_QSU, date, index))
+  select(-c(rowid_wq, Chlor_UGL, BGAPC_UGL, fDOM_QSU, date, index)) %>% 
+  mutate(flag_batt_log = if_else(is.na(flag_batt_log), "", flag_batt_log),
+         flag_batt_radio = if_else(is.na(flag_batt_radio), "", flag_batt_radio))
 names(buoy2023_wq_L1)
 
 names(buoy2023_met_L1)
